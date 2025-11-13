@@ -13,7 +13,6 @@ from ui import (
     render_input_section,
     render_analyze_button,
     render_results,
-    render_disclaimer,
     render_footer
 )
 
@@ -40,8 +39,9 @@ def main():
         st.error(f"Error initializing clients: {error}")
         st.stop()
     
-    # Apply custom CSS
-    apply_custom_css()
+    # Apply custom CSS with theme support
+    theme = st.session_state.get("theme", "light")
+    apply_custom_css(theme)
     
     # Render header
     render_header()
@@ -88,9 +88,6 @@ def main():
     # Display results
     if st.session_state.results:
         render_results(st.session_state.results)
-    
-    # Render disclaimer
-    render_disclaimer()
     
     # Render footer
     render_footer()
