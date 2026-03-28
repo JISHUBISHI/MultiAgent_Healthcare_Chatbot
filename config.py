@@ -22,9 +22,10 @@ def initialize_clients():
     
     try:
         llm = ChatGroq(
-            model="openai/gpt-oss-120b",
+            model="llama-3.3-70b-versatile",
             groq_api_key=groq_api_key,
-            temperature=0.3
+            temperature=0.3,
+            max_retries=3,
         )
         
         tavily_client = TavilyClient(api_key=tavily_api_key)

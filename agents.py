@@ -20,23 +20,23 @@ class AgentState(TypedDict):
 
 
 # Helper function to search Tavily
-def search_tavily(tavily_client, query: str, max_results: int = 3) -> str:
+def search_tavily(tavily_client, query: str, max_results: int = 2) -> str:
     """Search Tavily API for verified health information"""
     if not tavily_client:
         return "Tavily client not initialized."
     try:
         response = tavily_client.search(
             query=query,
-            search_depth="advanced",
+            search_depth="basic",
             max_results=max_results
         )
         if response.get("results"):
             sources = []
             for result in response["results"]:
                 title = result.get("title", "")
-                content = result.get("content", "")
+                content = result.get("content", "")[:500]  # Truncate content to 500 chars to avoid TPM limits
                 url = result.get("url", "")
-                sources.append(f"**{title}**\n{content}\nSource: {url}")
+                sources.append(f"**{title}**\n{content}...\nSource: {url}")
             return "\n\n".join(sources)
         return "No verified information found."
     except Exception as e:
@@ -72,12 +72,12 @@ Rules:
 - Reference Tavily evidence implicitly; no raw URLs.
 - Never add extra sections or disclaimers.
 """),
-        ("human", f"User symptoms: {user_input}\n\nVerified medical information:\n{tavily_info}\n\nProvide the Structured Symptom Analysis as specified.")
+        ("human", "User symptoms: {symptoms}\n\nVerified medical information:\n{info}\n\nProvide the Structured Symptom Analysis as specified.")
     ])
     
     try:
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"symptoms": user_input, "info": tavily_info})
         state["symptom_analysis"] = response.content
     except Exception as e:
         state["symptom_analysis"] = f"Error in symptom analysis: {str(e)}"
@@ -97,8 +97,8 @@ def medication_agent(state: AgentState, llm, tavily_client) -> AgentState:
     symptom_analysis = state.get("symptom_analysis", "")
     
     # Enhanced search for medication information with multiple queries
-    tavily_info1 = search_tavily(tavily_client, f"medication names brand names treatment {user_input} prescription drugs", max_results=5)
-    tavily_info2 = search_tavily(tavily_client, f"medication dosage timing frequency {user_input} how to take", max_results=5)
+    tavily_info1 = search_tavily(tavily_client, f"medication names brand names treatment {user_input} prescription drugs", max_results=2)
+    tavily_info2 = search_tavily(tavily_client, f"medication dosage timing frequency {user_input} how to take", max_results=2)
     tavily_info = f"{tavily_info1}\n\n{tavily_info2}"
     
     prompt = ChatPromptTemplate.from_messages([
@@ -113,12 +113,12 @@ Requirements:
 - Do NOT restate home remedies, lifestyle tips, or doctor information.
 - No additional sections or repeated text.
 """),
-        ("human", f"Symptoms: {user_input}\n\nSymptom Analysis:\n{symptom_analysis}\n\nVERIFIED MEDICATION INFORMATION FROM WEB SEARCH:\n{tavily_info}\n\nDeliver the concise table and summary as specified, using only medications supported by the verified information.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVERIFIED MEDICATION INFORMATION FROM WEB SEARCH:\n{info}\n\nDeliver the concise table and summary as specified, using only medications supported by the verified information.")
     ])
     
     try:
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["medication_advice"] = response.content
     except Exception as e:
         state["medication_advice"] = f"Error in medication advice: {str(e)}"
@@ -155,12 +155,12 @@ Rules:
 - Do NOT repeat medication dosages, diet plans, or doctor advice.
 - No additional sections, disclaimers, or repeated text.
 """),
-        ("human", f"Symptoms: {user_input}\n\nSymptom Analysis:\n{symptom_analysis}\n\nVerified home remedy information:\n{tavily_info}\n\nProvide the structured response exactly as specified.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified home remedy information:\n{info}\n\nProvide the structured response exactly as specified.")
     ])
     
     try:
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["home_remedies"] = response.content
     except Exception as e:
         state["home_remedies"] = f"Error in home remedies: {str(e)}"
@@ -197,12 +197,12 @@ Rules:
 - Keep language direct; no duplicated advice.
 - Reference Tavily evidence implicitly; no URLs.
 """),
-        ("human", f"Symptoms: {user_input}\n\nSymptom Analysis:\n{symptom_analysis}\n\nVerified diet and lifestyle information:\n{tavily_info}\n\nProvide the structured response exactly as specified.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified diet and lifestyle information:\n{info}\n\nProvide the structured response exactly as specified.")
     ])
     
     try:
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["diet_lifestyle"] = response.content
     except Exception as e:
         state["diet_lifestyle"] = f"Error in diet/lifestyle advice: {str(e)}"
@@ -222,9 +222,9 @@ def doctor_recommendation_agent(state: AgentState, llm, tavily_client) -> AgentS
     symptom_analysis = state.get("symptom_analysis", "")
     
     # Enhanced search for doctor information with multiple queries
-    tavily_info1 = search_tavily(tavily_client, f"doctor names specialists {user_input} healthcare providers hospitals", max_results=5)
-    tavily_info2 = search_tavily(tavily_client, f"doctor appointment booking consultation hours availability {user_input}", max_results=5)
-    tavily_info3 = search_tavily(tavily_client, f"telemedicine platforms online doctors {user_input} virtual consultation", max_results=5)
+    tavily_info1 = search_tavily(tavily_client, f"doctor names specialists {user_input} healthcare providers hospitals", max_results=2)
+    tavily_info2 = search_tavily(tavily_client, f"doctor appointment booking consultation hours availability {user_input}", max_results=2)
+    tavily_info3 = search_tavily(tavily_client, f"telemedicine platforms online doctors {user_input} virtual consultation", max_results=2)
     tavily_info = f"{tavily_info1}\n\n{tavily_info2}\n\n{tavily_info3}"
     
     prompt = ChatPromptTemplate.from_messages([
@@ -242,12 +242,12 @@ Rules:
 - Mention each contact number or booking URL only once (omit full URLs; note “call” or “app”).
 - Keep wording tight; no repeated phrases across rows.
 """),
-        ("human", f"Symptoms: {user_input}\n\nSymptom Analysis:\n{symptom_analysis}\n\nVERIFIED DOCTOR AND HEALTHCARE INFORMATION FROM WEB SEARCH:\n{tavily_info}\n\nProvide the structured response exactly as specified, extracting real doctor/platform names and hours from the verified information.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVERIFIED DOCTOR AND HEALTHCARE INFORMATION FROM WEB SEARCH:\n{info}\n\nProvide the structured response exactly as specified, extracting real doctor/platform names and hours from the verified information.")
     ])
     
     try:
         chain = prompt | llm
-        response = chain.invoke({})
+        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["doctor_recommendations"] = response.content
     except Exception as e:
         state["doctor_recommendations"] = f"Error in doctor recommendations: {str(e)}"
@@ -279,19 +279,19 @@ def create_workflow(llm, tavily_client):
     workflow = StateGraph(AgentState)
     
     # Add nodes
-    workflow.add_node("symptom_analyzer", symptom_wrapper)
-    workflow.add_node("medication", medication_wrapper)
-    workflow.add_node("home_remedies", home_remedies_wrapper)
-    workflow.add_node("diet_lifestyle", diet_lifestyle_wrapper)
-    workflow.add_node("doctor_recommendation", doctor_recommendation_wrapper)
+    workflow.add_node("symptom_analyzer_node", symptom_wrapper)
+    workflow.add_node("medication_node", medication_wrapper)
+    workflow.add_node("home_remedies_node", home_remedies_wrapper)
+    workflow.add_node("diet_lifestyle_node", diet_lifestyle_wrapper)
+    workflow.add_node("doctor_recommendation_node", doctor_recommendation_wrapper)
     
     # Define the flow
-    workflow.set_entry_point("symptom_analyzer")
-    workflow.add_edge("symptom_analyzer", "medication")
-    workflow.add_edge("medication", "home_remedies")
-    workflow.add_edge("home_remedies", "diet_lifestyle")
-    workflow.add_edge("diet_lifestyle", "doctor_recommendation")
-    workflow.add_edge("doctor_recommendation", END)
+    workflow.set_entry_point("symptom_analyzer_node")
+    workflow.add_edge("symptom_analyzer_node", "medication_node")
+    workflow.add_edge("medication_node", "home_remedies_node")
+    workflow.add_edge("home_remedies_node", "diet_lifestyle_node")
+    workflow.add_edge("diet_lifestyle_node", "doctor_recommendation_node")
+    workflow.add_edge("doctor_recommendation_node", END)
     
     return workflow.compile()
 

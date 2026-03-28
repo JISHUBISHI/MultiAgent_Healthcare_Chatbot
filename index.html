@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HealthBuddy | AI Medical Assistant</title>
+  <meta name="theme-color" content="#051016">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #051016;
+      --bg-deep: #091a24;
+      --bg-panel: #0b1720;
+      --card: rgba(10, 23, 32, 0.68);
+      --card-strong: rgba(13, 28, 38, 0.84);
+      --line: rgba(121, 216, 255, 0.14);
+      --line-soft: rgba(255, 255, 255, 0.08);
+      --ink: #e9f7ff;
+      --muted: #8da7b7;
+      --teal: #3cc7d6;
+      --blue: #3b82f6;
+      --mint: #16c79a;
+      --glow: rgba(60, 199, 214, 0.22);
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.34);
+      --radius-xl: 34px;
+      --radius-lg: 24px;
+      --radius-md: 18px;
+      --max: 1200px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Manrope", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(60, 199, 214, 0.16), transparent 24%),
+        radial-gradient(circle at 90% 20%, rgba(59, 130, 246, 0.18), transparent 22%),
+        radial-gradient(circle at 70% 78%, rgba(22, 199, 154, 0.10), transparent 20%),
+        linear-gradient(180deg, #040b10 0%, var(--bg) 42%, var(--bg-deep) 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body {
+      background-attachment: fixed;
+    }
+
+    body::selection {
+      background: rgba(60, 199, 214, 0.26);
+      color: #ffffff;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      inset: auto;
+      pointer-events: none;
+      z-index: 0;
+      filter: blur(10px);
+    }
+
+    body::before {
+      top: 80px;
+      left: -80px;
+      width: 260px;
+      height: 260px;
+      background: radial-gradient(circle, rgba(60, 199, 214, 0.22), transparent 65%);
+      animation: floatBlob 14s ease-in-out infinite;
+    }
+
+    body::after {
+      right: -70px;
+      bottom: 60px;
+      width: 320px;
+      height: 320px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.20), transparent 70%);
+      animation: floatBlob 16s ease-in-out infinite reverse;
+    }
+
+    .page {
+      position: relative;
+      z-index: 1;
+      width: min(var(--max), calc(100% - 40px));
+      margin: 0 auto;
+      padding: 26px 0 48px;
+    }
+
+    .glass {
+      background:
+        linear-gradient(180deg, rgba(15, 29, 40, 0.82), rgba(7, 18, 27, 0.72)),
+        linear-gradient(135deg, rgba(60, 199, 214, 0.06), transparent 42%);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      position: relative;
+    }
+
+    .glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      pointer-events: none;
+      background: linear-gradient(135deg, rgba(255,255,255,0.10), transparent 35%, transparent 65%, rgba(60,199,214,0.06));
+      opacity: 0.75;
+    }
+
+    .nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-radius: 22px;
+      margin-bottom: 22px;
+      animation: fadeUp 0.8s ease-out both;
+      position: sticky;
+      top: 14px;
+      z-index: 10;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .brand-mark {
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 14px 30px rgba(59, 130, 246, 0.16), 0 0 18px rgba(60, 199, 214, 0.16);
+      overflow: hidden;
+      padding: 4px;
+      position: relative;
+    }
+
+    .brand-mark img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 14px;
+      display: block;
+    }
+
+    .brand-heart {
+      width: 100%;
+      height: 100%;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      background:
+        radial-gradient(circle at 35% 30%, rgba(255, 173, 182, 0.28), transparent 24%),
+        radial-gradient(circle at 68% 72%, rgba(59, 130, 246, 0.12), transparent 34%),
+        linear-gradient(180deg, rgba(16, 27, 37, 0.95), rgba(10, 20, 30, 0.92));
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .brand-heart::before {
+      content: "";
+      position: absolute;
+      inset: 6px;
+      border-radius: 12px;
+      border: 1px solid rgba(143, 247, 255, 0.10);
+    }
+
+    .brand-heart svg {
+      width: 34px;
+      height: 34px;
+      position: relative;
+      z-index: 1;
+      animation: brandHeartBeat 1.65s ease-in-out infinite;
+      transform-origin: center;
+      filter: drop-shadow(0 0 8px rgba(255, 92, 117, 0.28));
+    }
+
+    .brand-heart-pulse {
+      position: absolute;
+      left: 4px;
+      bottom: 10px;
+      width: 18px;
+      height: 10px;
+      opacity: 0.9;
+    }
+
+    .brand-heart-pulse svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .brand-heart-pulse path {
+      fill: none;
+      stroke: #8ff7ff;
+      stroke-width: 1.5;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 24;
+      stroke-dashoffset: 24;
+      animation: brandPulseLine 1.9s linear infinite;
+      filter: drop-shadow(0 0 4px rgba(60, 199, 214, 0.28));
+    }
+
+    .brand-text small {
+      display: block;
+      font-size: 0.72rem;
+      color: #7fb8ca;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      margin-bottom: 2px;
+    }
+
+    .brand-text span {
+      font-size: 1.1rem;
+    }
+
+    .brand-text .slogan {
+      display: block;
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: #b7d7e4;
+      letter-spacing: 0.02em;
+      font-weight: 600;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .nav-links a,
+    .cta-link,
+    .hero-actions a {
+      text-decoration: none;
+    }
+
+    .nav-pill {
+      padding: 10px 16px;
+      border-radius: 999px;
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--line-soft);
+      transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+    }
+
+    .nav-pill:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--line);
+    }
+
+    .nav-pill.primary,
+    .button.primary {
+      color: white;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      border: none;
+      box-shadow: 0 18px 30px rgba(37, 99, 235, 0.22);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.25fr 0.85fr;
+      gap: 22px;
+      align-items: stretch;
+      margin-bottom: 22px;
+    }
+
+    .hero-panel {
+      padding: 34px;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      position: relative;
+      animation: fadeUp 0.9s ease-out both;
+    }
+
+    .hero-panel::before {
+      content: "";
+      position: absolute;
+      top: -60px;
+      right: -40px;
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(59, 130, 246, 0.24), transparent 66%);
+      border-radius: 50%;
+    }
+
+    .hero-panel::after {
+      content: "";
+      position: absolute;
+      left: -40px;
+      bottom: -70px;
+      width: 210px;
+      height: 210px;
+      background: radial-gradient(circle, rgba(60, 199, 214, 0.16), transparent 66%);
+      border-radius: 50%;
+    }
+
+    .hero-panel > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    .medical-orb {
+      position: absolute;
+      right: 28px;
+      bottom: 26px;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      border: 1px solid rgba(60, 199, 214, 0.22);
+      background: radial-gradient(circle, rgba(60,199,214,0.10), rgba(59,130,246,0.03) 58%, transparent 70%);
+      box-shadow: 0 0 30px rgba(60,199,214,0.12);
+      animation: floatPulse 6s ease-in-out infinite;
+    }
+
+    .medical-orb::before,
+    .medical-orb::after {
+      content: "";
+      position: absolute;
+      inset: 14px;
+      border-radius: 50%;
+      border: 1px dashed rgba(156, 239, 255, 0.18);
+      animation: spinRing 14s linear infinite;
+    }
+
+    .medical-orb::after {
+      inset: 34px;
+      border-style: solid;
+      border-color: rgba(59, 130, 246, 0.16);
+      animation-direction: reverse;
+      animation-duration: 10s;
+    }
+
+    .medical-cross {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #b5f6ff;
+      text-shadow: 0 0 18px rgba(60, 199, 214, 0.24);
+      animation: glowBeat 2.6s ease-in-out infinite;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9cefff;
+      background: rgba(60, 199, 214, 0.10);
+      border: 1px solid rgba(60, 199, 214, 0.22);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+
+    .hero h1 {
+      margin: 18px 0 16px;
+      font-size: clamp(2.8rem, 6vw, 5.2rem);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      max-width: 760px;
+    }
+
+    .hero-copy {
+      max-width: 640px;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--muted);
+      margin-bottom: 20px;
+    }
+
+    .hero-slogan {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      margin-bottom: 22px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(121, 216, 255, 0.12);
+      color: #eafcff;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+    }
+
+    .hero-slogan::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+      box-shadow: 0 0 14px rgba(22, 199, 154, 0.45);
+      flex: 0 0 auto;
+    }
+
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 28px;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px 20px;
+      border-radius: 16px;
+      font-weight: 700;
+      transition: transform 0.22s ease, box-shadow 0.22s ease, background 0.22s ease;
+    }
+
+    .button.secondary {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line-soft);
+    }
+
+    .button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(60, 199, 214, 0.14);
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .metric {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--line-soft);
+      transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease;
+    }
+
+    .metric:hover {
+      transform: translateY(-5px);
+      background: rgba(255, 255, 255, 0.08);
+      border-color: var(--line);
+    }
+
+    .metric small {
+      display: block;
+      margin-bottom: 8px;
+      color: #82aab9;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .metric strong {
+      font-size: 1.05rem;
+      line-height: 1.45;
+    }
+
+    .hero-side {
+      display: grid;
+      gap: 18px;
+      animation: fadeUp 1s ease-out both;
+    }
+
+    .card {
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card h3,
+    .card h2 {
+      margin: 0 0 10px;
+      letter-spacing: -0.04em;
+    }
+
+    .card p {
+      margin: 0;
+      line-height: 1.75;
+      color: var(--muted);
+    }
+
+    .pulse-line {
+      position: relative;
+      height: 88px;
+      margin-top: 18px;
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01)),
+        repeating-linear-gradient(
+          90deg,
+          rgba(60,199,214,0.08) 0,
+          rgba(60,199,214,0.08) 1px,
+          transparent 1px,
+          transparent 34px
+        );
+      border: 1px solid var(--line-soft);
+      overflow: hidden;
+    }
+
+    .pulse-line svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .pulse-line path {
+      stroke: url(#hbPulse);
+      stroke-width: 3.5;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 420;
+      stroke-dashoffset: 420;
+      animation: drawPulse 4.5s linear infinite;
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .status {
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+    }
+
+    .status strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+    }
+
+    .status span {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .section {
+      margin-top: 22px;
+      padding: 28px;
+      border-radius: var(--radius-xl);
+      animation: fadeUp 1.1s ease-out both;
+    }
+
+    .launch-stage {
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.14), transparent 24%),
+        radial-gradient(circle at top left, rgba(60, 199, 214, 0.12), transparent 26%),
+        linear-gradient(180deg, rgba(10, 24, 34, 0.92), rgba(7, 18, 27, 0.82));
+    }
+
+    .launch-stage::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.05) 18%, transparent 32%),
+        linear-gradient(180deg, transparent, rgba(60,199,214,0.03));
+      animation: heroSweep 7s linear infinite;
+    }
+
+    .launch-top {
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 22px;
+      align-items: center;
+      margin-bottom: 22px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .launch-copy {
+      max-width: 720px;
+    }
+
+    .launch-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+      color: #aef4ff;
+      background: rgba(60, 199, 214, 0.10);
+      border: 1px solid rgba(60, 199, 214, 0.22);
+      margin-bottom: 16px;
+    }
+
+    .launch-kicker::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+      box-shadow: 0 0 14px rgba(22, 199, 154, 0.44);
+    }
+
+    .launch-title {
+      margin: 0 0 12px;
+      font-size: clamp(2.4rem, 5vw, 4.35rem);
+      line-height: 0.94;
+      letter-spacing: -0.06em;
+      max-width: 760px;
+    }
+
+    .launch-subtitle {
+      margin: 0;
+      max-width: 640px;
+      font-size: 1rem;
+      line-height: 1.65;
+      color: var(--muted);
+    }
+
+    .launch-side {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mini-presence {
+      padding: 18px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+    }
+
+    .mini-presence h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+      letter-spacing: -0.03em;
+    }
+
+    .mini-presence p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.93rem;
+    }
+
+    .presence-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .presence-tile {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .presence-tile small {
+      display: block;
+      margin-bottom: 6px;
+      color: #88b9c8;
+      font-size: 0.68rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .presence-tile strong {
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 20px;
+      margin-bottom: 18px;
+    }
+
+    .section-head.tight {
+      margin-bottom: 14px;
+    }
+
+    .section-head small {
+      display: block;
+      margin-bottom: 8px;
+      color: #91eaf9;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+    }
+
+    .section-head h2 {
+      margin: 0;
+      font-size: clamp(1.7rem, 3vw, 2.4rem);
+      letter-spacing: -0.05em;
+    }
+
+    .section-head p {
+      max-width: 520px;
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+
+    .badge {
+      padding: 12px 16px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+      color: #9dc1cf;
+      white-space: nowrap;
+    }
+
+    .badge.success {
+      color: #cffff5;
+      border-color: rgba(22, 199, 154, 0.24);
+      background: rgba(22, 199, 154, 0.10);
+      box-shadow: 0 0 20px rgba(22, 199, 154, 0.12);
+    }
+
+    .badge.error {
+      color: #ffd7e2;
+      border-color: rgba(185, 28, 28, 0.22);
+      background: rgba(185, 28, 28, 0.12);
+    }
+
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .section-subgrid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .feature-card {
+      padding: 22px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+      transition: transform 0.24s ease, background 0.24s ease, border-color 0.24s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-6px);
+      background: rgba(255,255,255,0.08);
+      border-color: var(--line);
+    }
+
+    .feature-icon {
+      width: 52px;
+      height: 52px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      margin-bottom: 16px;
+      font-weight: 800;
+      color: white;
+      background: linear-gradient(135deg, var(--teal), var(--blue));
+      box-shadow: 0 16px 30px rgba(37, 99, 235, 0.22), 0 0 18px rgba(60, 199, 214, 0.18);
+    }
+
+    .feature-card h3 {
+      margin: 0 0 8px;
+      font-size: 1.15rem;
+    }
+
+    .feature-card p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .showcase {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 18px;
+      margin-top: 18px;
+    }
+
+    .clinic-panel,
+    .journey-panel {
+      padding: 24px;
+      border-radius: 24px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+    }
+
+    .journey-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .journey-step {
+      display: grid;
+      grid-template-columns: 46px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .journey-step b {
+      width: 46px;
+      height: 46px;
+      border-radius: 15px;
+      display: grid;
+      place-items: center;
+      color: white;
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+    }
+
+    .journey-step strong {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    .journey-step span {
+      color: var(--muted);
+      line-height: 1.6;
+      font-size: 0.92rem;
+    }
+
+    .mini-dashboard {
+      margin-top: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .dashboard-row {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .mini-tile {
+      padding: 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .mini-tile small {
+      display: block;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .mini-tile strong {
+      font-size: 0.98rem;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding: 18px 22px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      color: var(--muted);
+      animation: fadeUp 1.2s ease-out both;
+    }
+
+    .footer strong {
+      color: var(--ink);
+    }
+
+    .footer a {
+      color: var(--teal);
+      text-decoration: none;
+      font-weight: 700;
+    }
+
+    .console-shell {
+      display: grid;
+      grid-template-columns: 0.95fr 1.05fr;
+      gap: 18px;
+      align-items: start;
+      position: relative;
+      z-index: 1;
+    }
+
+    .console-topline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: #9cefff;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .console-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--mint), var(--teal));
+      box-shadow: 0 0 14px rgba(22, 199, 154, 0.55);
+      animation: glowBeat 2.4s ease-in-out infinite;
+    }
+
+    .console-panel,
+    .results-panel {
+      padding: 24px;
+      border-radius: 26px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line-soft);
+      transition: transform 0.24s ease, border-color 0.24s ease, box-shadow 0.24s ease;
+    }
+
+    .console-panel:hover,
+    .results-panel:hover {
+      transform: translateY(-4px);
+      border-color: var(--line);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 24px 46px rgba(0,0,0,0.24);
+    }
+
+    .console-panel h3,
+    .results-panel h3 {
+      margin: 0 0 10px;
+      font-size: 1.18rem;
+      letter-spacing: -0.04em;
+    }
+
+    .console-panel p,
+    .results-panel p {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.55;
+    }
+
+    .console-form {
+      margin-top: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .console-form label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--teal);
+    }
+
+    .textarea-shell {
+      position: relative;
+    }
+
+    .heart-monitor {
+      position: absolute;
+      right: 16px;
+      bottom: 14px;
+      width: 122px;
+      height: 96px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(60,199,214,0.05), rgba(59,130,246,0.03));
+      border: 1px solid rgba(60, 199, 214, 0.10);
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      pointer-events: none;
+      z-index: 2;
+      overflow: hidden;
+      padding: 10px 12px 10px 10px;
+    }
+
+    .heart-monitor::after {
+      content: "";
+      position: absolute;
+      right: 8px;
+      top: 10px;
+      width: 68px;
+      height: 68px;
+      border-radius: 999px;
+      border: 1px solid rgba(143, 247, 255, 0.18);
+      animation: heartRing 1.8s ease-out infinite;
+    }
+
+    .artery-line {
+      width: 52px;
+      height: 28px;
+      position: relative;
+      z-index: 1;
+      flex: 0 0 auto;
+      opacity: 0.95;
+    }
+
+    .artery-line svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      overflow: visible;
+    }
+
+    .artery-line path {
+      fill: none;
+      stroke: #8ff7ff;
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 80;
+      stroke-dashoffset: 80;
+      filter: drop-shadow(0 0 6px rgba(60, 199, 214, 0.28));
+      animation: arteryPulse 2s linear infinite;
+    }
+
+    .heart-monitor svg {
+      width: 56px;
+      height: 56px;
+      position: relative;
+      z-index: 1;
+      filter: drop-shadow(0 0 10px rgba(255, 98, 122, 0.28));
+      animation: heartBeat 1.8s ease-in-out infinite;
+      transform-origin: center;
+    }
+
+    .console-form textarea {
+      width: 100%;
+      min-height: 220px;
+      resize: vertical;
+      border: 1px solid var(--line-soft);
+      border-radius: 22px;
+      padding: 18px 18px;
+      font: inherit;
+      color: var(--ink);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.015)),
+        rgba(4, 14, 21, 0.42);
+      outline: none;
+      backdrop-filter: blur(18px);
+      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .console-form textarea:focus {
+      border-color: rgba(60, 199, 214, 0.32);
+      box-shadow: 0 0 0 4px rgba(60, 199, 214, 0.10), 0 0 24px rgba(60, 199, 214, 0.10);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.025)),
+        rgba(4, 14, 21, 0.56);
+    }
+
+    .console-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .console-actions button {
+      cursor: pointer;
+      font: inherit;
+    }
+
+    .button.ghost {
+      color: var(--ink);
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .console-tips {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .tip-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .tip-card strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.92rem;
+    }
+
+    .tip-card span {
+      color: var(--muted);
+      font-size: 0.88rem;
+      line-height: 1.55;
+    }
+
+    .status-banner {
+      margin-top: 16px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+      color: var(--muted);
+      min-height: 54px;
+      display: flex;
+      align-items: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .status-banner::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+      transform: translateX(-100%);
+      animation: sweep 4.8s linear infinite;
+    }
+
+    .status-banner.loading {
+      color: var(--ink);
+      border-color: rgba(59,130,246,0.24);
+      background: rgba(59,130,246,0.10);
+    }
+
+    .status-banner.error {
+      color: #8a1538;
+      border-color: rgba(185,28,28,0.22);
+      background: rgba(185,28,28,0.10);
+    }
+
+    .results-placeholder {
+      margin-top: 18px;
+      padding: 18px;
+      border-radius: 18px;
+      border: 1px dashed rgba(121, 216, 255, 0.22);
+      color: var(--muted);
+      background: rgba(255,255,255,0.03);
+      transition: opacity 0.22s ease, transform 0.22s ease;
+    }
+
+    .results-meta {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 18px 0;
+    }
+
+    .meta-card {
+      padding: 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line-soft);
+    }
+
+    .meta-card small {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 0.7rem;
+      font-weight: 800;
+    }
+
+    .meta-card strong {
+      font-size: 0.96rem;
+      line-height: 1.5;
+    }
+
+    .results-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .result-card {
+      padding: 18px;
+      border-radius: 20px;
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.03)),
+        rgba(8, 20, 29, 0.82);
+      border: 1px solid var(--line-soft);
+      transition: transform 0.22s ease, background 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03);
+    }
+
+    .result-card:hover {
+      transform: translateY(-4px);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.04)),
+        rgba(8, 20, 29, 0.92);
+      border-color: var(--line);
+      box-shadow: 0 16px 36px rgba(0,0,0,0.28);
+    }
+
+    .result-head {
+      display: flex;
+      justify-content: space-between;
+      gap: 14px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .result-head h4 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: -0.03em;
+    }
+
+    .result-pill {
+      padding: 8px 11px;
+      border-radius: 999px;
+      color: white;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .result-content {
+      color: var(--ink);
+      line-height: 1.72;
+      font-size: 0.96rem;
+    }
+
+    .result-content p {
+      margin: 0 0 12px;
+      color: var(--ink);
+    }
+
+    .result-content ul,
+    .result-content ol {
+      margin: 0 0 12px 18px;
+      padding: 0;
+    }
+
+    .result-content li {
+      margin-bottom: 8px;
+      color: #caeaff;
+    }
+
+    .result-content strong {
+      color: #f4fbff;
+    }
+
+    .result-content table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0;
+      overflow: hidden;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .result-content th,
+    .result-content td {
+      padding: 12px 10px;
+      text-align: left;
+      vertical-align: top;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      font-size: 0.9rem;
+    }
+
+    .result-content th {
+      color: #f4fbff;
+      background: rgba(255,255,255,0.07);
+      font-weight: 800;
+    }
+
+    .results-grid .result-card {
+      animation: fadeUp 0.55s ease both;
+    }
+
+    .results-grid .result-card:nth-child(2) {
+      animation-delay: 0.04s;
+    }
+
+    .results-grid .result-card:nth-child(3) {
+      animation-delay: 0.08s;
+    }
+
+    .results-grid .result-card:nth-child(4) {
+      animation-delay: 0.12s;
+    }
+
+    .console-panel,
+    .results-panel,
+    .feature-card,
+    .card,
+    .clinic-panel,
+    .journey-panel,
+    .section {
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 18px 44px rgba(0,0,0,0.22);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes floatBlob {
+      0%, 100% {
+        transform: translateY(0) translateX(0) scale(1);
+      }
+      50% {
+        transform: translateY(-18px) translateX(12px) scale(1.05);
+      }
+    }
+
+    @keyframes drawPulse {
+      0% {
+        stroke-dashoffset: 420;
+      }
+      40% {
+        stroke-dashoffset: 0;
+      }
+      100% {
+        stroke-dashoffset: -420;
+      }
+    }
+
+    @keyframes sweep {
+      from {
+        transform: translateX(-120%);
+      }
+      to {
+        transform: translateX(120%);
+      }
+    }
+
+    @keyframes heroSweep {
+      from {
+        transform: translateX(-30%);
+      }
+      to {
+        transform: translateX(30%);
+      }
+    }
+
+    @keyframes spinRing {
+      from {
+        transform: rotate(0deg);
+      }
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    @keyframes floatPulse {
+      0%, 100% {
+        transform: translateY(0px) scale(1);
+      }
+      50% {
+        transform: translateY(-8px) scale(1.03);
+      }
+    }
+
+    @keyframes glowBeat {
+      0%, 100% {
+        opacity: 0.85;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.08);
+      }
+    }
+
+    @keyframes heartBeat {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+      12% {
+        transform: scale(1.18);
+        opacity: 1;
+      }
+      24% {
+        transform: scale(0.98);
+      }
+      36% {
+        transform: scale(1.14);
+      }
+      48% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes heartRing {
+      0% {
+        transform: scale(0.72);
+        opacity: 0.75;
+      }
+      100% {
+        transform: scale(1.28);
+        opacity: 0;
+      }
+    }
+
+    @keyframes arteryPulse {
+      0% {
+        stroke-dashoffset: 80;
+        opacity: 0.35;
+      }
+      35% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+      100% {
+        stroke-dashoffset: -80;
+        opacity: 0.45;
+      }
+    }
+
+    @keyframes brandHeartBeat {
+      0%, 100% {
+        transform: scale(1);
+      }
+      12% {
+        transform: scale(1.18);
+      }
+      24% {
+        transform: scale(0.97);
+      }
+      36% {
+        transform: scale(1.14);
+      }
+      48% {
+        transform: scale(1);
+      }
+    }
+
+    @keyframes brandPulseLine {
+      0% {
+        stroke-dashoffset: 24;
+        opacity: 0.3;
+      }
+      35% {
+        stroke-dashoffset: 0;
+        opacity: 1;
+      }
+      100% {
+        stroke-dashoffset: -24;
+        opacity: 0.45;
+      }
+    }
+
+    @media (max-width: 1040px) {
+      .hero,
+      .showcase,
+      .feature-grid,
+      .launch-top,
+      .console-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics,
+      .dashboard-row,
+      .console-tips,
+      .results-meta,
+      .presence-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .page {
+        width: min(var(--max), calc(100% - 24px));
+        padding-top: 16px;
+      }
+
+      .nav,
+      .footer,
+      .section-head {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .nav-links,
+      .hero-actions {
+        flex-direction: column;
+      }
+
+      .metrics,
+      .status-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-panel,
+      .section {
+        padding: 22px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <nav class="nav glass">
+      <div class="brand">
+        <div class="brand-mark">
+          <div class="brand-heart" aria-hidden="true">
+            <div class="brand-heart-pulse">
+              <svg viewBox="0 0 24 10" role="presentation">
+                <path d="M1 6 L6 6 L8 3 L10 8 L13 4 L16 6 L23 6"></path>
+              </svg>
+            </div>
+            <svg viewBox="0 0 64 64" role="presentation">
+              <defs>
+                <linearGradient id="navHeartBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffb0b7"></stop>
+                  <stop offset="40%" stop-color="#ff5c75"></stop>
+                  <stop offset="100%" stop-color="#b91646"></stop>
+                </linearGradient>
+                <linearGradient id="navHeartShade" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#ffd0d4" stop-opacity="0.95"></stop>
+                  <stop offset="100%" stop-color="#7b102c" stop-opacity="0.88"></stop>
+                </linearGradient>
+              </defs>
+              <path fill="url(#navHeartBody)" d="M33 9c4-3 10-2 13 2 3 4 3 9 1 14-3 7-10 13-15 18-4-4-8-9-11-14-3-5-5-11-3-16 2-5 8-7 15-4z"></path>
+              <path fill="url(#navHeartShade)" d="M33 9c2 4 2 8 0 12-2 4-6 7-8 12-2 4-1 9 2 14-4-4-8-9-11-14-3-5-5-11-3-16 2-5 8-7 15-4z" opacity="0.58"></path>
+              <path fill="#8f1239" d="M31 10c-2-3-8-4-11 0-3 3-2 7-1 10 1 4 4 7 7 10 0-5 1-10 5-15 1-2 1-4 0-5z" opacity="0.55"></path>
+              <path fill="#ffccd2" d="M36 14c4 1 7 4 8 8 1 5-2 9-5 12 2-6 0-14-3-20z" opacity="0.4"></path>
+              <path fill="#6e0d28" d="M29 7c0-3 2-5 5-5 3 0 5 2 5 5 0 3-2 6-5 8-3-2-5-5-5-8z"></path>
+              <path fill="#7f1d1d" d="M24 10c-3 0-6 2-7 5-1 4 0 7 1 10 2 3 4 6 7 8-1-5 1-10 4-15 1-3 1-6-1-8-1 0-2 0-4 0z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="brand-text">
+          <small>AI Medical Assistant</small>
+          <span>HealthBuddy</span>
+          <span class="slogan">Your Health Our Responsibility</span>
+        </div>
+      </div>
+      <div class="nav-links">
+        <a class="nav-pill" href="#features">Features</a>
+        <a class="nav-pill" href="#experience">Experience</a>
+        <a class="nav-pill primary" href="#care-console" id="launch-desktop-btn">Launch App</a>
+      </div>
+    </nav>
+
+    <section class="section glass launch-stage" id="care-console">
+      <div class="launch-top">
+        <div class="launch-copy">
+          <div class="launch-kicker">Interactive Medical Console</div>
+          <h1 class="launch-title">Describe symptoms fast. Get calm, structured care guidance instantly.</h1>
+          <p class="launch-subtitle">Built like a polished health product so users can act immediately, trust the flow, and install it like an app.</p>
+        </div>
+        <div class="launch-side">
+          <div class="mini-presence">
+            <h3>HealthBuddy at a glance</h3>
+            <p>Your first screen is now focused on symptom entry, live backend status, and rapid review-ready output.</p>
+          </div>
+          <div class="presence-grid">
+            <div class="presence-tile">
+              <small>Access</small>
+              <strong>Instant symptom entry</strong>
+            </div>
+            <div class="presence-tile">
+              <small>Status</small>
+              <strong id="api-badge">Checking backend...</strong>
+            </div>
+            <div class="presence-tile">
+              <small>Design</small>
+              <strong>Dark medical-tech interface</strong>
+            </div>
+            <div class="presence-tile">
+              <small>Experience</small>
+              <strong>Your Health Our Responsibibility</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-head tight">
+        <div>
+          <small>Direct Care Access</small>
+          <h2>Use HealthBuddy directly from this page.</h2>
+          <p>Type symptoms once, review care guidance immediately.</p>
+        </div>
+      </div>
+
+      <div class="console-shell">
+        <div class="console-panel">
+          <div class="console-topline"><span class="console-dot"></span>Live medical console</div>
+          <h3>Describe symptoms</h3>
+          <p>Add duration, severity, fever, triggers, or medicines taken.</p>
+
+          <form class="console-form" id="analysis-form">
+            <div class="textarea-shell">
+              <label for="symptoms">Patient symptom note</label>
+              <textarea id="symptoms" placeholder="Example: I have had a dry cough, sore throat, low fever, and body ache for three days. The fever gets worse at night and I feel weak after simple activity."></textarea>
+              <div class="heart-monitor" aria-hidden="true">
+                <div class="artery-line">
+                  <svg viewBox="0 0 56 28" role="presentation">
+                    <path d="M1 16 L14 16 L20 8 L25 22 L31 12 L37 16 L55 16"></path>
+                  </svg>
+                </div>
+                <svg viewBox="0 0 64 64" role="presentation">
+                  <defs>
+                    <linearGradient id="heartBody" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ff9a9e"></stop>
+                      <stop offset="38%" stop-color="#ff5c75"></stop>
+                      <stop offset="100%" stop-color="#b91646"></stop>
+                    </linearGradient>
+                    <linearGradient id="heartShade" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ffb3b8" stop-opacity="0.95"></stop>
+                      <stop offset="100%" stop-color="#7b102c" stop-opacity="0.9"></stop>
+                    </linearGradient>
+                  </defs>
+                  <path fill="url(#heartBody)" d="M33 9c4-3 10-2 13 2 3 4 3 9 1 14-3 7-10 13-15 18-4-4-8-9-11-14-3-5-5-11-3-16 2-5 8-7 15-4z"></path>
+                  <path fill="url(#heartShade)" d="M33 9c2 4 2 8 0 12-2 4-6 7-8 12-2 4-1 9 2 14-4-4-8-9-11-14-3-5-5-11-3-16 2-5 8-7 15-4z" opacity="0.6"></path>
+                  <path fill="#8f1239" d="M31 10c-2-3-8-4-11 0-3 3-2 7-1 10 1 4 4 7 7 10 0-5 1-10 5-15 1-2 1-4 0-5z" opacity="0.55"></path>
+                  <path fill="#ffccd2" d="M36 14c4 1 7 4 8 8 1 5-2 9-5 12 2-6 0-14-3-20z" opacity="0.4"></path>
+                  <path fill="#6e0d28" d="M29 7c0-3 2-5 5-5 3 0 5 2 5 5 0 3-2 6-5 8-3-2-5-5-5-8z"></path>
+                  <path fill="#7f1d1d" d="M24 10c-3 0-6 2-7 5-1 4 0 7 1 10 2 3 4 6 7 8-1-5 1-10 4-15 1-3 1-6-1-8-1 0-2 0-4 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="console-actions">
+              <button class="button primary" type="submit" id="analyze-btn">Generate Care Analysis</button>
+            </div>
+          </form>
+
+          <div class="status-banner" id="status-banner">HealthBuddy is ready for symptom analysis.</div>
+
+          <div class="console-tips">
+            <div class="tip-card">
+              <strong>Timeline</strong>
+              <span>Mention when symptoms started and whether they are worsening.</span>
+            </div>
+            <div class="tip-card">
+              <strong>Severity</strong>
+              <span>Include pain, fever, breathing changes, or impact on normal activity.</span>
+            </div>
+            <div class="tip-card">
+              <strong>Context</strong>
+              <span>Add cough, food issues, sleep changes, or medication already used.</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="results-panel">
+          <div class="console-topline"><span class="console-dot"></span>Structured output</div>
+          <h3>Care analysis output</h3>
+          <p>Summary, medication, home care, lifestyle, and escalation guidance.</p>
+
+          <div class="results-meta hidden" id="results-meta">
+            <div class="meta-card">
+              <small>Sections</small>
+              <strong id="meta-sections">0 completed</strong>
+            </div>
+            <div class="meta-card">
+              <small>Review</small>
+              <strong>Results stay available directly in the interface</strong>
+            </div>
+            <div class="meta-card">
+              <small>Status</small>
+              <strong id="meta-status">Awaiting symptom input</strong>
+            </div>
+          </div>
+
+          <div class="results-placeholder" id="results-placeholder">
+            HealthBuddy results will appear here after you submit a symptom description.
+          </div>
+
+          <div class="results-grid hidden" id="results-grid"></div>
+        </div>
+      </div>
+    </section>
+
+    <main class="hero">
+      <section class="hero-panel glass">
+        <div class="eyebrow">Transparent Clinical Experience</div>
+        <h1>Beautiful AI healthcare guidance designed as a modern digital clinic.</h1>
+        <p class="hero-copy">
+          Calm symptom guidance with a sharper, medical-style experience.
+        </p>
+        <div class="hero-slogan">Your Health Our Responsibibility</div>
+        <div class="hero-actions">
+          <a class="button primary" href="#care-console">Open HealthBuddy</a>
+          <a class="button secondary" href="#features">Explore Features</a>
+        </div>
+        <div class="metrics">
+          <div class="metric">
+            <small>Workflow</small>
+            <strong>Multi-agent reasoning inspired by triage-style analysis</strong>
+          </div>
+          <div class="metric">
+            <small>Interface</small>
+            <strong>Glassmorphism, transparency, and clean clinical presentation</strong>
+          </div>
+          <div class="metric">
+            <small>Purpose</small>
+            <strong>Faster symptom understanding with clearer care guidance</strong>
+          </div>
+        </div>
+        <div class="medical-orb" aria-hidden="true">
+          <div class="medical-cross">+</div>
+        </div>
+      </section>
+
+      <aside class="hero-side">
+        <section class="card glass">
+          <h3>Live Care Signal</h3>
+          <p>Subtle medical motion for a cleaner app feel.</p>
+          <div class="pulse-line">
+            <svg viewBox="0 0 500 100" preserveAspectRatio="none" aria-hidden="true">
+              <defs>
+                <linearGradient id="hbPulse" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stop-color="#10b981"></stop>
+                  <stop offset="55%" stop-color="#0b7285"></stop>
+                  <stop offset="100%" stop-color="#2563eb"></stop>
+                </linearGradient>
+              </defs>
+              <path d="M0,58 L70,58 L110,58 L135,26 L160,80 L190,44 L220,58 L300,58 L340,58 L365,18 L390,82 L418,44 L446,58 L500,58"></path>
+            </svg>
+          </div>
+        </section>
+
+        <section class="card glass">
+          <h3>What HealthBuddy Delivers</h3>
+          <div class="status-grid">
+            <div class="status">
+              <strong>Symptom Summary</strong>
+              <span>Clean interpretation of what the user is feeling.</span>
+            </div>
+            <div class="status">
+              <strong>Medication Awareness</strong>
+              <span>Readable guidance separated from other care tracks.</span>
+            </div>
+            <div class="status">
+              <strong>Home Support</strong>
+              <span>Practical self-care presented in calmer language.</span>
+            </div>
+            <div class="status">
+              <strong>Escalation Advice</strong>
+              <span>Doctor follow-up guidance when symptoms need attention.</span>
+            </div>
+          </div>
+        </section>
+      </aside>
+    </main>
+
+    <section class="section glass" id="features">
+      <div class="section-head">
+        <div>
+          <small>Product Highlights</small>
+          <h2>Built like a real healthcare product.</h2>
+          <p>Less clutter, better hierarchy, stronger medical-tech presence.</p>
+        </div>
+        <div class="badge">HealthBuddy Interface</div>
+      </div>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <div class="feature-icon">01</div>
+          <h3>Clinical Visual Language</h3>
+          <p>Sharper medical styling.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">02</div>
+          <h3>Readable Information Flow</h3>
+          <p>Faster scanning and cleaner sections.</p>
+        </article>
+        <article class="feature-card">
+          <div class="feature-icon">03</div>
+          <h3>Subtle Motion</h3>
+          <p>Medical motion without noise.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section glass" id="experience">
+      <div class="section-head">
+        <div>
+          <small>Experience Design</small>
+          <h2>From symptom input to clear care guidance.</h2>
+          <p>Simple flow. Better readability. Faster action.</p>
+        </div>
+        <div class="badge">Digital Clinic Feel</div>
+      </div>
+
+      <div class="showcase">
+        <div class="clinic-panel">
+          <h3>Patient Journey</h3>
+          <div class="journey-list">
+            <div class="journey-step">
+              <b>1</b>
+              <div>
+                <strong>Describe symptoms clearly</strong>
+                <span>Users enter what they feel in natural language instead of navigating complex forms.</span>
+              </div>
+            </div>
+            <div class="journey-step">
+              <b>2</b>
+              <div>
+                <strong>Receive organized care tracks</strong>
+                <span>Recommendations are separated into summary, home care, medication, lifestyle, and escalation.</span>
+              </div>
+            </div>
+            <div class="journey-step">
+              <b>3</b>
+              <div>
+                <strong>Review and export</strong>
+                <span>The final output is polished enough for easier review directly on screen.</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="journey-panel">
+          <h3>Mini Care Dashboard</h3>
+          <p>Compact, readable, and structured.</p>
+          <div class="mini-dashboard">
+            <div class="dashboard-row">
+              <div class="mini-tile">
+                <small>Clinical Summary</small>
+                <strong>High-level symptom framing with quick readability.</strong>
+              </div>
+              <div class="mini-tile">
+                <small>Home Care</small>
+                <strong>Rest, hydration, and comfort guidance grouped cleanly.</strong>
+              </div>
+              <div class="mini-tile">
+                <small>Escalation</small>
+                <strong>Signals for when to seek a doctor or urgent support.</strong>
+              </div>
+            </div>
+            <div class="dashboard-row">
+              <div class="mini-tile">
+                <small>Lifestyle</small>
+                <strong>Food, recovery, sleep, and routine suggestions.</strong>
+              </div>
+              <div class="mini-tile">
+                <small>Medication</small>
+                <strong>OTC-aware advice separated from the rest of the plan.</strong>
+              </div>
+              <div class="mini-tile">
+                <small>Presentation</small>
+                <strong>Clear enough for direct in-browser care review and follow-up.</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer glass">
+      <div>
+        <strong>HealthBuddy</strong><br>
+        Your Health Our Responsibibility
+      </div>
+      <div>
+        Designed for a more premium medical-tech feel.
+      </div>
+    </footer>
+  </div>
+  <script>
+    const sectionMeta = [
+      { key: "symptom_analysis", title: "Clinical Summary", accent: "#0b7285", code: "SC" },
+      { key: "medication_advice", title: "Medication Guidance", accent: "#2563eb", code: "RX" },
+      { key: "home_remedies", title: "Home Care", accent: "#a16207", code: "HC" },
+      { key: "diet_lifestyle", title: "Lifestyle Support", accent: "#7c3aed", code: "LS" },
+      { key: "doctor_recommendations", title: "Care Escalation", accent: "#be123c", code: "MD" }
+    ];
+
+    const form = document.getElementById("analysis-form");
+    const symptomsInput = document.getElementById("symptoms");
+    const analyzeBtn = document.getElementById("analyze-btn");
+    const launchDesktopBtn = document.getElementById("launch-desktop-btn");
+    const statusBanner = document.getElementById("status-banner");
+    const apiBadge = document.getElementById("api-badge");
+    const resultsMeta = document.getElementById("results-meta");
+    const resultsPlaceholder = document.getElementById("results-placeholder");
+    const resultsGrid = document.getElementById("results-grid");
+    const metaSections = document.getElementById("meta-sections");
+    const metaStatus = document.getElementById("meta-status");
+
+    let lastResults = null;
+    let lastSymptoms = "";
+    let deferredInstallPrompt = null;
+
+    function escapeHtml(value) {
+      return value
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function inlineMarkdown(text) {
+      return escapeHtml(text)
+        .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+    }
+
+    function markdownToHtml(markdown) {
+      const lines = markdown.split(/\r?\n/);
+      let html = "";
+      let i = 0;
+      let inUl = false;
+      let inOl = false;
+
+      function closeLists() {
+        if (inUl) {
+          html += "</ul>";
+          inUl = false;
+        }
+        if (inOl) {
+          html += "</ol>";
+          inOl = false;
+        }
+      }
+
+      while (i < lines.length) {
+        const raw = lines[i];
+        const line = raw.trim();
+
+        if (!line) {
+          closeLists();
+          i += 1;
+          continue;
+        }
+
+        if (line.startsWith("|") && i + 1 < lines.length && /^\s*\|[\s\-|:]+\|\s*$/.test(lines[i + 1])) {
+          closeLists();
+          const tableLines = [];
+          while (i < lines.length && lines[i].trim().startsWith("|")) {
+            tableLines.push(lines[i].trim());
+            i += 1;
+          }
+          const rows = tableLines
+            .filter((row, idx) => idx !== 1)
+            .map((row) => row.replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim()));
+          if (rows.length) {
+            html += "<table><thead><tr>";
+            rows[0].forEach((cell) => {
+              html += `<th>${inlineMarkdown(cell)}</th>`;
+            });
+            html += "</tr></thead><tbody>";
+            rows.slice(1).forEach((row) => {
+              html += "<tr>";
+              row.forEach((cell) => {
+                html += `<td>${inlineMarkdown(cell)}</td>`;
+              });
+              html += "</tr>";
+            });
+            html += "</tbody></table>";
+          }
+          continue;
+        }
+
+        if (/^\d+\.\s+/.test(line)) {
+          if (!inOl) {
+            closeLists();
+            html += "<ol>";
+            inOl = true;
+          }
+          html += `<li>${inlineMarkdown(line.replace(/^\d+\.\s+/, ""))}</li>`;
+          i += 1;
+          continue;
+        }
+
+        if (/^[-*]\s+/.test(line)) {
+          if (!inUl) {
+            closeLists();
+            html += "<ul>";
+            inUl = true;
+          }
+          html += `<li>${inlineMarkdown(line.replace(/^[-*]\s+/, ""))}</li>`;
+          i += 1;
+          continue;
+        }
+
+        closeLists();
+
+        if (/^#{1,6}\s+/.test(line)) {
+          const level = line.match(/^#+/)[0].length;
+          html += `<h${Math.min(level + 1, 6)}>${inlineMarkdown(line.replace(/^#{1,6}\s+/, ""))}</h${Math.min(level + 1, 6)}>`;
+        } else {
+          html += `<p>${inlineMarkdown(line)}</p>`;
+        }
+        i += 1;
+      }
+
+      closeLists();
+      return html;
+    }
+
+    function setStatus(message, type = "default") {
+      statusBanner.textContent = message;
+      statusBanner.className = "status-banner";
+      if (type !== "default") {
+        statusBanner.classList.add(type);
+      }
+    }
+
+    function renderResults(results, symptoms) {
+      const sections = sectionMeta.filter((item) => results[item.key]);
+      resultsGrid.innerHTML = sections.map((item) => `
+        <article class="result-card">
+          <div class="result-head">
+            <h4>${item.title}</h4>
+            <span class="result-pill" style="background:${item.accent};">${item.code}</span>
+          </div>
+          <div class="result-content">${markdownToHtml(String(results[item.key] || ""))}</div>
+        </article>
+      `).join("");
+
+      resultsPlaceholder.classList.add("hidden");
+      resultsGrid.classList.remove("hidden");
+      resultsMeta.classList.remove("hidden");
+      metaSections.textContent = `${sections.length} of ${sectionMeta.length} sections completed`;
+      metaStatus.textContent = results.error ? "Completed with note" : "Analysis completed";
+      setStatus("HealthBuddy analysis completed successfully.");
+      lastResults = results;
+      lastSymptoms = symptoms;
+    }
+
+    async function checkBackend() {
+      try {
+        const response = await fetch("/api/health");
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Backend unavailable");
+        }
+        apiBadge.textContent = "Backend connected";
+        apiBadge.classList.add("success");
+      } catch (error) {
+        apiBadge.textContent = "Backend unavailable";
+        apiBadge.classList.add("error");
+        setStatus(error.message || "Backend connection failed.", "error");
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/service-worker.js").catch(() => {});
+      });
+    }
+
+    window.addEventListener("beforeinstallprompt", (event) => {
+      event.preventDefault();
+      deferredInstallPrompt = event;
+    });
+
+    window.addEventListener("appinstalled", () => {
+      setStatus("HealthBuddy installed. You can open it from the taskbar or Start menu.");
+      deferredInstallPrompt = null;
+    });
+
+    launchDesktopBtn.addEventListener("click", async (event) => {
+      event.preventDefault();
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice.outcome === "accepted") {
+          setStatus("HealthBuddy install started. You can pin it to the taskbar after install.");
+        } else {
+          setStatus("Install prompt dismissed. Creating a desktop launcher instead.");
+        }
+        deferredInstallPrompt = null;
+        if (choice.outcome === "accepted") {
+          return;
+        }
+      }
+
+      launchDesktopBtn.textContent = "Creating Desktop App...";
+      launchDesktopBtn.style.pointerEvents = "none";
+
+      try {
+        const link = document.createElement("a");
+        link.href = "/download/healthbuddy-installer.bat";
+        link.download = "healthbuddy-installer.bat";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setStatus("Installer downloaded. Double-click the .bat installer to install HealthBuddy on your computer.");
+        window.location.hash = "care-console";
+      } catch (error) {
+        setStatus(error.message || "Unable to download the HealthBuddy installer.", "error");
+      } finally {
+        launchDesktopBtn.textContent = "Launch App";
+        launchDesktopBtn.style.pointerEvents = "";
+      }
+    });
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const symptoms = symptomsInput.value.trim();
+      if (!symptoms) {
+        setStatus("Please describe symptoms before running the analysis.", "error");
+        symptomsInput.focus();
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      resultsGrid.classList.add("hidden");
+      resultsPlaceholder.classList.remove("hidden");
+      resultsPlaceholder.textContent = "HealthBuddy is analyzing symptoms, gathering medical evidence, and preparing your care guidance...";
+      setStatus("Running full HealthBuddy analysis...", "loading");
+      metaStatus.textContent = "Analysis in progress";
+
+      try {
+        const response = await fetch("/api/analyze", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ symptoms })
+        });
+        const payload = await response.json();
+        if (!response.ok || !payload.ok) {
+          throw new Error(payload.error || "Analysis failed");
+        }
+        renderResults(payload.results, symptoms);
+        resultsGrid.scrollIntoView({ behavior: "smooth", block: "start" });
+      } catch (error) {
+        resultsMeta.classList.add("hidden");
+        resultsGrid.classList.add("hidden");
+        resultsPlaceholder.classList.remove("hidden");
+        resultsPlaceholder.textContent = "The analysis could not be completed. Please check your API keys and server logs, then try again.";
+        setStatus(error.message || "Something went wrong while generating the analysis.", "error");
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    checkBackend();
+  </script>
+</body>
+</html>
