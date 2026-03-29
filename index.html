@@ -2084,9 +2084,11 @@
       lastSymptoms = symptoms;
     }
 
+    const API_BASE = (window.location.protocol === "file:" || window.location.port !== "5000") ? "http://127.0.0.1:5000" : "";
+
     async function checkBackend() {
       try {
-        const response = await fetch("/api/health");
+        const response = await fetch(`${API_BASE}/api/health`);
         const payload = await response.json();
         if (!response.ok || !payload.ok) {
           throw new Error(payload.error || "Backend unavailable");
@@ -2169,7 +2171,7 @@
       metaStatus.textContent = "Analysis in progress";
 
       try {
-        const response = await fetch("/api/analyze", {
+        const response = await fetch(`${API_BASE}/api/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ symptoms })

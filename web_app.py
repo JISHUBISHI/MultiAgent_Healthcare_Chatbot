@@ -8,13 +8,17 @@ import os
 from pathlib import Path
 
 from flask import Response, Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 
 from agents import AgentState, create_workflow
 from config import get_api_keys, initialize_clients
+from dotenv import load_dotenv
 
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
+CORS(app)
 
 _workflow = None
 _workflow_error = None
@@ -156,5 +160,4 @@ pause
         },
     )
 
-if __name__ == "__main__":
-    app.run(debug=False, host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
+

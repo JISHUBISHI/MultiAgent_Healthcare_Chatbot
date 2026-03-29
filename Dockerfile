@@ -27,4 +27,4 @@ USER appuser
 
 EXPOSE 8501
 
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+ENTRYPOINT ["gunicorn", "--bind", "0.0.0.0:8501", "wsgi:app"]
