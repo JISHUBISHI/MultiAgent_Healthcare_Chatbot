@@ -1,0 +1,51 @@
+# Version control
+.git
+.gitignore
+.gitattributes
+
+# Secrets — NEVER bake .env into the image
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Dev/IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Streamlit artefacts
+.streamlit/
+streamlit.log
+streamlit.err
+
+# OS artefacts
+.DS_Store
+Thumbs.db
+
+# Test & scratch files
+test_*.py
+test_out.txt
+ui_new_test.py
+New folder/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Misc
+README.md
+generate_pwa_icons.py
