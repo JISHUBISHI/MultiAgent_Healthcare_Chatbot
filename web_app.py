@@ -5,6 +5,7 @@ Flask web app that connects the HealthBuddy HTML frontend to the healthcare back
 from __future__ import annotations
 
 import os
+import logging
 from pathlib import Path
 
 from flask import Response, Flask, jsonify, request, send_from_directory
@@ -15,6 +16,13 @@ from config import get_api_keys, initialize_clients
 from dotenv import load_dotenv
 
 load_dotenv()
+
+# Configure basic logging for production
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 BASE_DIR = Path(__file__).resolve().parent
 app = Flask(__name__, static_folder=str(BASE_DIR), static_url_path="")
@@ -89,6 +97,7 @@ def analyze():
         results = run_health_analysis(user_input)
         return jsonify({"ok": True, "results": results})
     except Exception as exc:
+        logger.error(f"Error during health analysis: {str(exc)}", exc_info=True)
         return jsonify({"ok": False, "error": str(exc)}), 500
 
 
