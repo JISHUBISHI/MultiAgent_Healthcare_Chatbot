@@ -1,4 +1,4 @@
-from web_app import app
+from healthbuddy.app import app
 import os
 from dotenv import load_dotenv
 

@@ -1,0 +1,2 @@
+"""HealthBuddy application package."""
+

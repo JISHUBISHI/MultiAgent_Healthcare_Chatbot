@@ -1,15 +1,14 @@
-"""
-Healthcare Agents - Multi-Agent System
-Contains all agent definitions and LangGraph workflow
-"""
+"""Multi-agent healthcare workflow and offline fallbacks."""
+
+from __future__ import annotations
 
 import re
 from typing import TypedDict
+
 from langchain_core.prompts import ChatPromptTemplate
-from langgraph.graph import StateGraph, END
+from langgraph.graph import END, StateGraph
 
 
-# State definition for LangGraph
 class AgentState(TypedDict):
     user_input: str
     symptom_analysis: str
@@ -115,14 +114,14 @@ def fallback_medication_advice(user_input: str) -> str:
         else "| Ibuprofen / Advil | Take with food for body pain if tolerated | 200 to 400 mg every 6 to 8 hours | Avoid in ulcers, kidney disease, dehydration | Acidity, stomach upset | OTC |"
     )
     return (
-        'IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only.\n\n'
+        "IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only.\n\n"
         "| Medication (Generic / Brand) | When & How to Take | Adult Dose | Key Precautions | Common Side Effects | Rx Status |\n"
         "| --- | --- | --- | --- | --- | --- |\n"
         "| Paracetamol / Crocin | After food or with water for fever or pain | 500 to 650 mg every 6 to 8 hours | Avoid exceeding daily label maximum; caution in liver disease | Nausea, rash | OTC |\n"
         f"{second_med}\n"
         f"{third_med}\n\n"
         "**Missed Dose & Duration** Use symptom-relief medicines only when needed for 1 to 3 days. If you miss a dose, take it when remembered unless the next dose is soon due.\n\n"
-        'IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only.'
+        "IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only."
     )
 
 
@@ -205,43 +204,34 @@ def fallback_doctor_recommendations(user_input: str) -> str:
     )
 
 
-# Helper function to search Tavily
 def search_tavily(tavily_client, query: str, max_results: int = 2) -> str:
-    """Search Tavily API for verified health information"""
+    """Search Tavily API for verified health information."""
     if not tavily_client:
         return "Tavily client not initialized."
     try:
-        response = tavily_client.search(
-            query=query,
-            search_depth="basic",
-            max_results=max_results
-        )
+        response = tavily_client.search(query=query, search_depth="basic", max_results=max_results)
         if response.get("results"):
             sources = []
             for result in response["results"]:
                 title = result.get("title", "")
-                content = result.get("content", "")[:500]  # Truncate content to 500 chars to avoid TPM limits
+                content = result.get("content", "")[:500]
                 url = result.get("url", "")
                 sources.append(f"**{title}**\n{content}...\nSource: {url}")
             return "\n\n".join(sources)
         return "No verified information found."
-    except Exception as e:
-        return f"Error fetching data: {str(e)}"
+    except Exception as exc:
+        return f"Error fetching data: {str(exc)}"
 
 
-# Agent 1: Symptom Analyzer
 def symptom_analyzer_agent(state: AgentState, llm, tavily_client) -> AgentState:
-    """Analyze symptoms and identify possible conditions"""
+    """Analyze symptoms and identify possible conditions."""
     if not llm:
         state["symptom_analysis"] = fallback_symptom_analysis(state["user_input"])
         state["error"] = "Live symptom analysis unavailable; offline guidance used."
         return state
-    
+
     user_input = state["user_input"]
-    
-    # Search for verified information
     tavily_info = search_tavily(tavily_client, f"medical symptoms analysis {user_input}")
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a clinical triage assistant. Use verified Tavily evidence to deliver a concise, non-repetitive assessment.
 
@@ -259,119 +249,105 @@ Rules:
 - Reference Tavily evidence implicitly; no raw URLs.
 - Never add extra sections or disclaimers.
 """),
-        ("human", "User symptoms: {symptoms}\n\nVerified medical information:\n{info}\n\nProvide the Structured Symptom Analysis as specified.")
+        ("human", "Symptoms: {symptoms}\n\nVerified information:\n{info}\n\nProvide the structured response exactly as specified."),
     ])
-    
+
     try:
-        chain = prompt | llm
-        response = chain.invoke({"symptoms": user_input, "info": tavily_info})
+        response = (prompt | llm).invoke({"symptoms": user_input, "info": tavily_info})
         state["symptom_analysis"] = response.content
-    except Exception as e:
+    except Exception as exc:
         state["symptom_analysis"] = fallback_symptom_analysis(user_input)
-        state["error"] = f"Live symptom analysis unavailable; offline guidance used. {str(e)}"
-    
+        state["error"] = f"Live symptom analysis unavailable; offline guidance used. {str(exc)}"
+
     return state
 
 
-# Agent 2: Medication Agent
 def medication_agent(state: AgentState, llm, tavily_client) -> AgentState:
-    """Suggest medications with dosage, side effects, and precautions"""
+    """Provide high-level medication guidance."""
     if not llm:
         state["medication_advice"] = fallback_medication_advice(state["user_input"])
         state["error"] = "Live medication advice unavailable; offline guidance used."
         return state
-    
+
     user_input = state["user_input"]
     symptom_analysis = state.get("symptom_analysis", "")
-    
-    # Enhanced search for medication information with multiple queries
-    tavily_info1 = search_tavily(tavily_client, f"medication names brand names treatment {user_input} prescription drugs", max_results=2)
-    tavily_info2 = search_tavily(tavily_client, f"medication dosage timing frequency {user_input} how to take", max_results=2)
-    tavily_info = f"{tavily_info1}\n\n{tavily_info2}"
-    
+    tavily_info = search_tavily(tavily_client, f"OTC medication advice precautions adult dose {user_input}")
     prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a clinical pharmacology assistant. Produce a concise, data-backed plan without repetition.
+        ("system", """You are a medication-information assistant. Provide concise, non-prescriptive OTC-oriented educational guidance.
 
-Requirements:
-- Begin and end with the exact disclaimer: "IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only."
-- Limit to the top 3 evidence-backed medications (prioritize those appearing in Tavily results). If fewer than 3 are appropriate, list fewer.
-- Present medications in a single markdown table with columns: `Medication (Generic / Brand) | When & How to Take | Adult Dose | Key Precautions | Common Side Effects | Rx Status`.
-- Timing must include meal relation and time-of-day guidance when available. Keep each cell ≤ 25 words; no sub-bullets.
-- After the table, add one short paragraph titled **Missed Dose & Duration** (≤ 40 words) summarizing course length and what to do if a dose is missed.
-- Do NOT restate home remedies, lifestyle tips, or doctor information.
-- No additional sections or repeated text.
-"""),
-        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVERIFIED MEDICATION INFORMATION FROM WEB SEARCH:\n{info}\n\nDeliver the concise table and summary as specified, using only medications supported by the verified information.")
-    ])
-    
-    try:
-        chain = prompt | llm
-        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
-        state["medication_advice"] = response.content
-    except Exception as e:
-        state["medication_advice"] = fallback_medication_advice(user_input)
-        state["error"] = f"Live medication advice unavailable; offline guidance used. {str(e)}"
-    
-    return state
-
-
-# Agent 3: Home Remedies Agent
-def home_remedies_agent(state: AgentState, llm, tavily_client) -> AgentState:
-    """Suggest safe natural remedies and self-care practices"""
-    if not llm:
-        state["home_remedies"] = fallback_home_remedies(state["user_input"])
-        state["error"] = "Live home-remedy advice unavailable; offline guidance used."
-        return state
-    
-    user_input = state["user_input"]
-    symptom_analysis = state.get("symptom_analysis", "")
-    
-    # Search for home remedies
-    tavily_info = search_tavily(tavily_client, f"home remedies natural treatment {user_input} self-care")
-    
-    prompt = ChatPromptTemplate.from_messages([
-        ("system", """You are a clinical self-care advisor. Produce a concise, evidence-backed plan without duplication or fluff.
-
-Output format (markdown, ≤ 180 words):
-
-**Home Remedies & Self-Care**
-- Markdown table with columns `Remedy | How to Use | Why It Helps | Caution` (max 4 rows, ≤ 20 words per cell)
-- **Stop Home Care If:** bullet list of 3 concrete escalation triggers (temperatures/symptoms)
-- **Evidence Notes:** bullet list (max 2) citing source type (e.g., "WHO fever guidance", "Mayo Clinic patient sheet") without URLs
+Output format (markdown, ≤ 220 words):
+- Start with this exact sentence: `IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION. This information is for educational purposes only.`
+- Then a markdown table with columns `Medication (Generic / Brand) | When & How to Take | Adult Dose | Key Precautions | Common Side Effects | Rx Status`
+- Include 3 rows maximum, concise wording, mostly OTC where appropriate.
+- End with one short paragraph titled `**Missed Dose & Duration**`.
+- Repeat the exact IMPORTANT sentence once again at the end.
 
 Rules:
-- Mention only remedies supported by Tavily evidence.
-- Do NOT repeat medication dosages, diet plans, or doctor advice.
-- No additional sections, disclaimers, or repeated text.
+- Do not mention treatments that need specialist monitoring unless clearly labeled Rx.
+- Avoid duplicate wording across rows.
+- No URLs.
 """),
-        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified home remedy information:\n{info}\n\nProvide the structured response exactly as specified.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified medication information:\n{info}\n\nProvide the structured response exactly as specified."),
     ])
-    
+
     try:
-        chain = prompt | llm
-        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
-        state["home_remedies"] = response.content
-    except Exception as e:
-        state["home_remedies"] = fallback_home_remedies(user_input)
-        state["error"] = f"Live home-remedy advice unavailable; offline guidance used. {str(e)}"
-    
+        response = (prompt | llm).invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
+        state["medication_advice"] = response.content
+    except Exception as exc:
+        state["medication_advice"] = fallback_medication_advice(user_input)
+        state["error"] = f"Live medication advice unavailable; offline guidance used. {str(exc)}"
+
     return state
 
 
-# Agent 4: Diet & Lifestyle Advisor
+def home_remedies_agent(state: AgentState, llm, tavily_client) -> AgentState:
+    """Provide home remedy and self-care guidance."""
+    if not llm:
+        state["home_remedies"] = fallback_home_remedies(state["user_input"])
+        state["error"] = "Live home-remedy guidance unavailable; offline guidance used."
+        return state
+
+    user_input = state["user_input"]
+    tavily_info = search_tavily(tavily_client, f"home remedies self care hydration rest advice {user_input}")
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", """You are a self-care assistant. Keep output concise and practical.
+
+Output format (markdown, ≤ 220 words):
+**Home Remedies & Self-Care**
+| Remedy | How to Use | Why It Helps | Caution |
+| --- | --- | --- | --- |
+3 to 4 rows only.
+- **Stop Home Care If:** bullet list with max 3 items.
+- **Evidence Notes:** bullet list with max 2 items.
+
+Rules:
+- Focus on hydration, rest, symptom comfort, and escalation.
+- Do not repeat medications or doctor lists.
+- No URLs.
+"""),
+        ("human", "Symptoms: {symptoms}\n\nVerified self-care information:\n{info}\n\nProvide the structured response exactly as specified."),
+    ])
+
+    try:
+        response = (prompt | llm).invoke({"symptoms": user_input, "info": tavily_info})
+        state["home_remedies"] = response.content
+    except Exception as exc:
+        state["home_remedies"] = fallback_home_remedies(user_input)
+        state["error"] = f"Live home-remedy guidance unavailable; offline guidance used. {str(exc)}"
+
+    return state
+
+
 def diet_lifestyle_agent(state: AgentState, llm, tavily_client) -> AgentState:
-    """Provide diet, meal plans, and lifestyle recommendations"""
+    """Provide diet and lifestyle guidance."""
     if not llm:
         state["diet_lifestyle"] = fallback_diet_lifestyle(state["user_input"])
         state["error"] = "Live diet/lifestyle advice unavailable; offline guidance used."
         return state
-    
+
     user_input = state["user_input"]
     symptom_analysis = state.get("symptom_analysis", "")
-    
-    # Search for diet and lifestyle information
     tavily_info = search_tavily(tavily_client, f"diet nutrition lifestyle recommendations {user_input} meal plan")
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a clinical nutrition & lifestyle coach. Deliver a succinct plan tailored to the reported symptoms.
 
@@ -387,37 +363,32 @@ Rules:
 - Keep language direct; no duplicated advice.
 - Reference Tavily evidence implicitly; no URLs.
 """),
-        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified diet and lifestyle information:\n{info}\n\nProvide the structured response exactly as specified.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVerified diet and lifestyle information:\n{info}\n\nProvide the structured response exactly as specified."),
     ])
-    
+
     try:
-        chain = prompt | llm
-        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
+        response = (prompt | llm).invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["diet_lifestyle"] = response.content
-    except Exception as e:
+    except Exception as exc:
         state["diet_lifestyle"] = fallback_diet_lifestyle(user_input)
-        state["error"] = f"Live diet/lifestyle advice unavailable; offline guidance used. {str(e)}"
-    
+        state["error"] = f"Live diet/lifestyle advice unavailable; offline guidance used. {str(exc)}"
+
     return state
 
 
-# Agent 5: Doctor Recommendation Agent
 def doctor_recommendation_agent(state: AgentState, llm, tavily_client) -> AgentState:
-    """Suggest relevant specialists and telemedicine platforms"""
+    """Suggest relevant specialists and telemedicine platforms."""
     if not llm:
         state["doctor_recommendations"] = fallback_doctor_recommendations(state["user_input"])
         state["error"] = "Live doctor recommendations unavailable; offline guidance used."
         return state
-    
+
     user_input = state["user_input"]
     symptom_analysis = state.get("symptom_analysis", "")
-    
-    # Enhanced search for doctor information with multiple queries
     tavily_info1 = search_tavily(tavily_client, f"doctor names specialists {user_input} healthcare providers hospitals", max_results=2)
     tavily_info2 = search_tavily(tavily_client, f"doctor appointment booking consultation hours availability {user_input}", max_results=2)
     tavily_info3 = search_tavily(tavily_client, f"telemedicine platforms online doctors {user_input} virtual consultation", max_results=2)
     tavily_info = f"{tavily_info1}\n\n{tavily_info2}\n\n{tavily_info3}"
-    
     prompt = ChatPromptTemplate.from_messages([
         ("system", """You are a medical referral coordinator. Provide concise, non-redundant guidance using verified Tavily data.
 
@@ -433,56 +404,31 @@ Rules:
 - Mention each contact number or booking URL only once (omit full URLs; note “call” or “app”).
 - Keep wording tight; no repeated phrases across rows.
 """),
-        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVERIFIED DOCTOR AND HEALTHCARE INFORMATION FROM WEB SEARCH:\n{info}\n\nProvide the structured response exactly as specified, extracting real doctor/platform names and hours from the verified information.")
+        ("human", "Symptoms: {symptoms}\n\nSymptom Analysis:\n{analysis}\n\nVERIFIED DOCTOR AND HEALTHCARE INFORMATION FROM WEB SEARCH:\n{info}\n\nProvide the structured response exactly as specified, extracting real doctor/platform names and hours from the verified information."),
     ])
-    
+
     try:
-        chain = prompt | llm
-        response = chain.invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
+        response = (prompt | llm).invoke({"symptoms": user_input, "analysis": symptom_analysis, "info": tavily_info})
         state["doctor_recommendations"] = response.content
-    except Exception as e:
+    except Exception as exc:
         state["doctor_recommendations"] = fallback_doctor_recommendations(user_input)
-        state["error"] = f"Live doctor recommendations unavailable; offline guidance used. {str(e)}"
-    
+        state["error"] = f"Live doctor recommendations unavailable; offline guidance used. {str(exc)}"
+
     return state
 
 
-# Build LangGraph workflow
 def create_workflow(llm, tavily_client):
-    """Create the LangGraph workflow with all agents"""
-    
-    # Create wrapper functions that include llm and tavily_client
-    def symptom_wrapper(state):
-        return symptom_analyzer_agent(state, llm, tavily_client)
-    
-    def medication_wrapper(state):
-        return medication_agent(state, llm, tavily_client)
-    
-    def home_remedies_wrapper(state):
-        return home_remedies_agent(state, llm, tavily_client)
-    
-    def diet_lifestyle_wrapper(state):
-        return diet_lifestyle_agent(state, llm, tavily_client)
-    
-    def doctor_recommendation_wrapper(state):
-        return doctor_recommendation_agent(state, llm, tavily_client)
-    
+    """Create the LangGraph workflow with all agents."""
     workflow = StateGraph(AgentState)
-    
-    # Add nodes
-    workflow.add_node("symptom_analyzer_node", symptom_wrapper)
-    workflow.add_node("medication_node", medication_wrapper)
-    workflow.add_node("home_remedies_node", home_remedies_wrapper)
-    workflow.add_node("diet_lifestyle_node", diet_lifestyle_wrapper)
-    workflow.add_node("doctor_recommendation_node", doctor_recommendation_wrapper)
-    
-    # Define the flow
+    workflow.add_node("symptom_analyzer_node", lambda state: symptom_analyzer_agent(state, llm, tavily_client))
+    workflow.add_node("medication_node", lambda state: medication_agent(state, llm, tavily_client))
+    workflow.add_node("home_remedies_node", lambda state: home_remedies_agent(state, llm, tavily_client))
+    workflow.add_node("diet_lifestyle_node", lambda state: diet_lifestyle_agent(state, llm, tavily_client))
+    workflow.add_node("doctor_recommendation_node", lambda state: doctor_recommendation_agent(state, llm, tavily_client))
     workflow.set_entry_point("symptom_analyzer_node")
     workflow.add_edge("symptom_analyzer_node", "medication_node")
     workflow.add_edge("medication_node", "home_remedies_node")
     workflow.add_edge("home_remedies_node", "diet_lifestyle_node")
     workflow.add_edge("diet_lifestyle_node", "doctor_recommendation_node")
     workflow.add_edge("doctor_recommendation_node", END)
-    
     return workflow.compile()
-

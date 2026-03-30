@@ -1,33 +1,28 @@
-import sys
-from config import initialize_clients
-from agents import create_workflow, AgentState
+from agents import create_workflow
 
-def main():
-    llm, tavily_client, error = initialize_clients()
-    if error:
-        print("Initialization Error:", error)
-        sys.exit(1)
-        
-    print("Clients initialized. Creating workflow...")
-    workflow = create_workflow(llm, tavily_client)
-    
-    initial_state = {
-        "user_input": "headache and fever",
-        "symptom_analysis": "",
-        "medication_advice": "",
-        "home_remedies": "",
-        "diet_lifestyle": "",
-        "doctor_recommendations": "",
-        "error": ""
-    }
-    
-    print("Invoking workflow...")
-    try:
-        result = workflow.invoke(initial_state)
-        print("Result keys:", result.keys())
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
 
-if __name__ == "__main__":
-    main()
+class FailingLLM:
+    def invoke(self, *_args, **_kwargs):
+        raise ConnectionError("offline for test")
+
+
+def test_workflow_returns_offline_fallback_sections():
+    workflow = create_workflow(FailingLLM(), None)
+    result = workflow.invoke(
+        {
+            "user_input": "headache and fever for 2 days",
+            "symptom_analysis": "",
+            "medication_advice": "",
+            "home_remedies": "",
+            "diet_lifestyle": "",
+            "doctor_recommendations": "",
+            "error": "",
+        }
+    )
+
+    assert "Structured Symptom Analysis" in result["symptom_analysis"]
+    assert "IMPORTANT: CONSULT A DOCTOR BEFORE TAKING ANY MEDICATION" in result["medication_advice"]
+    assert "Home Remedies & Self-Care" in result["home_remedies"]
+    assert "Hydration & Monitoring" in result["diet_lifestyle"]
+    assert "Best Specialist Type & Why" in result["doctor_recommendations"]
+    assert "offline guidance used" in result["error"].lower()

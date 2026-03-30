@@ -1,0 +1,45 @@
+"""Environment and API client setup."""
+
+from __future__ import annotations
+
+import os
+
+from dotenv import load_dotenv
+from langchain_groq import ChatGroq
+from tavily import TavilyClient
+
+load_dotenv()
+
+
+def initialize_clients():
+    """Initialize Groq LLM and Tavily API clients."""
+    groq_api_key = os.getenv("GROQ_API_KEY")
+    tavily_api_key = os.getenv("TAVILY_API_KEY")
+
+    if not groq_api_key or not tavily_api_key:
+        return None, None, "Missing API keys"
+
+    try:
+        llm = ChatGroq(
+            model="llama-3.3-70b-versatile",
+            groq_api_key=groq_api_key,
+            temperature=0.3,
+            max_retries=0,
+            timeout=4,
+        )
+        tavily_client = TavilyClient(api_key=tavily_api_key)
+
+        try:
+            llm.invoke("Reply with OK")
+        except Exception:
+            llm = None
+
+        return llm, tavily_client, None
+    except Exception as exc:
+        return None, None, str(exc)
+
+
+def get_api_keys():
+    """Get API keys from the environment."""
+    return os.getenv("GROQ_API_KEY"), os.getenv("TAVILY_API_KEY")
+

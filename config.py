@@ -25,11 +25,16 @@ def initialize_clients():
             model="llama-3.3-70b-versatile",
             groq_api_key=groq_api_key,
             temperature=0.3,
-            max_retries=3,
+            max_retries=0,
+            timeout=4,
         )
-        
         tavily_client = TavilyClient(api_key=tavily_api_key)
-        
+
+        try:
+            llm.invoke("Reply with OK")
+        except Exception:
+            llm = None
+
         return llm, tavily_client, None
     except Exception as e:
         return None, None, str(e)
