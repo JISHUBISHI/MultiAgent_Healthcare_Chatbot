@@ -1587,6 +1587,7 @@
   let deferredPrompt=null;
   let currentPatient=null;
   let authProviders={google:false,facebook:false};
+  const isMobileDevice=()=>/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
 
   // Keys must match AgentState fields from agents.py:
   // symptom_analysis | medication_advice | home_remedies | diet_lifestyle | doctor_recommendations
@@ -1846,6 +1847,7 @@
   launchBtn.addEventListener('click',async e=>{
     e.preventDefault();
     if(deferredPrompt){deferredPrompt.prompt();const{outcome}=await deferredPrompt.userChoice;deferredPrompt=null;if(outcome==='accepted'){setStatus('Installation started.');return;}}
+    if(isMobileDevice()){setStatus('On mobile, please use your browser menu and choose Add to Home screen or Install app. The Windows installer is only for desktop/laptop devices.','error');return;}
     launchBtn.textContent='Creating…';launchBtn.style.pointerEvents='none';
     try{const a=document.createElement('a');a.href=`${API_PREFIX}/download/healthbuddy-installer.bat`;a.download='healthbuddy-installer.bat';document.body.appendChild(a);a.click();a.remove();setStatus('Installer downloaded. Double-click the .bat file to install.');window.location.hash='care-console';}
     catch(e){setStatus(e.message||'Unable to download installer.','error');}

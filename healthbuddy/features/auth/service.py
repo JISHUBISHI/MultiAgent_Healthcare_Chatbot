@@ -18,7 +18,23 @@ _mongo_error = None
 
 
 def normalize_mongodb_uri(mongo_uri: str) -> str:
-    """URL-encode MongoDB credentials when users paste raw Atlas URIs."""
+    """Clean and normalize MongoDB URIs copied from .env files or Atlas."""
+    mongo_uri = str(mongo_uri or "").strip()
+    if mongo_uri.startswith("MONGODB_URI="):
+        mongo_uri = mongo_uri.split("=", 1)[1].strip()
+
+    if (mongo_uri.startswith('"') and mongo_uri.endswith('"')) or (mongo_uri.startswith("'") and mongo_uri.endswith("'")):
+        mongo_uri = mongo_uri[1:-1].strip()
+
+    if not mongo_uri:
+        return mongo_uri
+
+    if not (mongo_uri.startswith("mongodb://") or mongo_uri.startswith("mongodb+srv://")):
+        raise ValueError(
+            "Invalid MONGODB_URI. In Render, paste only the MongoDB connection string itself, starting with "
+            "'mongodb://' or 'mongodb+srv://'. Do not paste 'MONGODB_URI=' or surrounding quotes."
+        )
+
     if "://" not in mongo_uri or "@" not in mongo_uri:
         return mongo_uri
 
@@ -56,7 +72,7 @@ def get_patient_collection():
         collection.create_index("email", unique=True)
         _mongo_error = None
         return collection, None
-    except PyMongoError as exc:
+    except (PyMongoError, ValueError) as exc:
         logger.error("MongoDB connection failed: %s", exc, exc_info=True)
         _mongo_error = f"MongoDB connection failed: {exc}"
         return None, _mongo_error
@@ -99,4 +115,3 @@ def patient_response(patient: dict) -> dict:
 
 def now_utc():
     return datetime.now(timezone.utc)
-
