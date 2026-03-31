@@ -6,11 +6,12 @@ from datetime import datetime, timezone
 import logging
 import os
 import re
+import ssl
 from urllib.parse import quote_plus, unquote_plus, urlsplit, urlunsplit
 
 import certifi
 from pymongo import MongoClient
-from pymongo.errors import PyMongoError
+from pymongo.errors import PyMongoError, ServerSelectionTimeoutError
 
 logger = logging.getLogger(__name__)
 EMAIL_RE = re.compile(r"^[A-Z0-9._%+\-]+@[A-Z0-9.\-]+\.[A-Z]{2,}$", re.I)
@@ -66,12 +67,24 @@ def get_patient_collection():
 
     try:
         mongo_uri = normalize_mongodb_uri(mongo_uri)
+
+        # Build a TLS context that forces TLS 1.2+ and uses the certifi CA bundle.
+        # This avoids the TLSV1_ALERT_INTERNAL_ERROR that occurs when the OS CA
+        # store is missing or the TLS negotiation falls back to an unsupported version.
+        tls_ctx = ssl.create_default_context(cafile=certifi.where())
+        tls_ctx.minimum_version = ssl.TLSVersion.TLSv1_2
+        tls_ctx.check_hostname = True
+        tls_ctx.verify_mode = ssl.CERT_REQUIRED
+
         client_options = {
-            "serverSelectionTimeoutMS": 5000,
+            "serverSelectionTimeoutMS": 10000,   # extended for Render cold-start
             "connectTimeoutMS": 20000,
             "socketTimeoutMS": 20000,
             "tls": True,
-            "tlsCAFile": certifi.where(),
+            "tlsCAFile": certifi.where(),        # explicit CA bundle
+            "retryWrites": True,
+            "retryReads": True,
+            "maxPoolSize": 5,                    # safe for Atlas free-tier (100 conn limit)
             "appname": os.environ.get("MONGODB_APP_NAME", "healthbuddy"),
         }
         _mongo_client = MongoClient(mongo_uri, **client_options)
@@ -80,13 +93,33 @@ def get_patient_collection():
         collection = _mongo_client[db_name]["patients"]
         collection.create_index("email", unique=True)
         _mongo_error = None
+        logger.info("MongoDB connection established successfully.")
         return collection, None
-    except (PyMongoError, ValueError) as exc:
-        logger.error("MongoDB connection failed: %s", exc, exc_info=True)
+    except ServerSelectionTimeoutError as exc:
+        # Timeout usually means Render's IP is not whitelisted in Atlas Network Access.
+        logger.error("MongoDB server selection timed out: %s", exc)
         _mongo_error = (
-            "MongoDB connection failed. Verify the Atlas URI, allow Render/hosting traffic in Atlas Network Access, "
-            f"and ensure TLS certificates are available in the runtime. Details: {exc}"
+            "Cannot reach MongoDB Atlas. Most likely cause: Render's outbound IP is not "
+            "whitelisted in Atlas → Network Access. Add 0.0.0.0/0 (allow all) temporarily "
+            "to confirm, then restrict to Render's static IPs. Details: %s" % exc
         )
+        return None, _mongo_error
+    except (PyMongoError, ValueError) as exc:
+        error_str = str(exc)
+        if "SSL" in error_str or "TLS" in error_str or "certificate" in error_str.lower():
+            msg = (
+                "MongoDB TLS/SSL handshake failed. Ensure 'certifi' is installed and up-to-date "
+                "(pip install --upgrade certifi), the Atlas URI uses 'mongodb+srv://', and the "
+                "Render runtime has ca-certificates installed. Details: %s" % exc
+            )
+        else:
+            msg = (
+                "MongoDB connection failed. Verify the Atlas URI, allow Render/hosting traffic "
+                "in Atlas Network Access, and ensure TLS certificates are available in the "
+                "runtime. Details: %s" % exc
+            )
+        logger.error(msg, exc_info=True)
+        _mongo_error = msg
         return None, _mongo_error
 
 
