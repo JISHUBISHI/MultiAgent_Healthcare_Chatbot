@@ -17,6 +17,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
         gcc \
+        ca-certificates \
         curl && \
     rm -rf /var/lib/apt/lists/*
 
@@ -36,6 +37,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PORT=10000
 
 WORKDIR /app
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 # Copy installed packages from the builder stage
 COPY --from=builder /install /usr/local

@@ -8,6 +8,7 @@ import os
 import re
 from urllib.parse import quote_plus, unquote_plus, urlsplit, urlunsplit
 
+import certifi
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 
@@ -65,7 +66,15 @@ def get_patient_collection():
 
     try:
         mongo_uri = normalize_mongodb_uri(mongo_uri)
-        _mongo_client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        client_options = {
+            "serverSelectionTimeoutMS": 5000,
+            "connectTimeoutMS": 20000,
+            "socketTimeoutMS": 20000,
+            "tls": True,
+            "tlsCAFile": certifi.where(),
+            "appname": os.environ.get("MONGODB_APP_NAME", "healthbuddy"),
+        }
+        _mongo_client = MongoClient(mongo_uri, **client_options)
         _mongo_client.admin.command("ping")
         db_name = os.environ.get("MONGODB_DB", "healthbuddy")
         collection = _mongo_client[db_name]["patients"]
@@ -74,7 +83,10 @@ def get_patient_collection():
         return collection, None
     except (PyMongoError, ValueError) as exc:
         logger.error("MongoDB connection failed: %s", exc, exc_info=True)
-        _mongo_error = f"MongoDB connection failed: {exc}"
+        _mongo_error = (
+            "MongoDB connection failed. Verify the Atlas URI, allow Render/hosting traffic in Atlas Network Access, "
+            f"and ensure TLS certificates are available in the runtime. Details: {exc}"
+        )
         return None, _mongo_error
 
 

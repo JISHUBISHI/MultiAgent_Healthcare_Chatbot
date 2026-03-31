@@ -28,9 +28,11 @@ If you ever stored real keys in `.env`, create new values before deploying:
 Create a free Atlas cluster and then:
 
 - Create a database user
-- Add your connection IP rule
+- In Atlas Network Access, allow the deployed app to reach the cluster
 - Copy the connection string
 - Replace username, password, and database name
+
+For Render or other hosted platforms, do not whitelist only your laptop IP. Render outbound IPs are not your local machine IP, so Atlas access can fail after deploy. For a quick setup, allow `0.0.0.0/0`, or use a fixed egress setup if you need a tighter rule.
 
 Use:
 
@@ -60,6 +62,7 @@ Set these in Render:
 - `FAST2SMS_API_KEY` only if SMS is required
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if you want Google login
 - `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` if you want Facebook login
+- `MONGODB_APP_NAME=healthbuddy` optionally, if you want the Atlas client name to be explicit
 
 These are already declared in `render.yaml`:
 
