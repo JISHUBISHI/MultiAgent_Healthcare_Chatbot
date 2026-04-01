@@ -1,8 +1,9 @@
-from healthbuddy.app import app
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
+
+from healthbuddy.app import app
 
 if __name__ == "__main__":
     # For local development only. In production (Render), Gunicorn will be used and will ignore this block.

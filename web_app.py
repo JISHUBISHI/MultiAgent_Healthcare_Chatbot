@@ -119,7 +119,6 @@ def validate_password(password: str) -> str | None:
 def auth_provider_status() -> dict:
     return {
         "google": bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET")),
-        "facebook": bool(os.environ.get("FACEBOOK_APP_ID") and os.environ.get("FACEBOOK_APP_SECRET")),
     }
 
 
@@ -352,7 +351,7 @@ def social_login(provider: str):
     """Placeholder endpoint for social providers until OAuth credentials are configured."""
     provider = provider.lower()
     providers = auth_provider_status()
-    if provider not in {"google", "facebook"}:
+    if provider not in {"google"}:
         return jsonify({"ok": False, "error": f"Unsupported social provider: {provider}"}), 404
     if not providers[provider]:
         return jsonify(

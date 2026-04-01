@@ -23,8 +23,6 @@ The project now has a feature-oriented package under `healthbuddy/`.
   - production entrypoint for Gunicorn
 - `web_app.py`
   - legacy Flask entrypoint
-- `app.py`
-  - Streamlit app entrypoint
 
 ## Compatibility files
 

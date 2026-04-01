@@ -152,6 +152,21 @@
     .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px var(--blue-glow); }
     .btn-ghost { background: var(--surface); color: var(--ink2); border: 1px solid var(--border2); }
     .btn-ghost:hover { background: var(--surface2); color: #fff; transform: translateY(-1px); }
+    .btn-android {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(34,197,94,0.28);
+    }
+    .btn-android:hover { box-shadow: 0 14px 34px rgba(34,197,94,0.34); }
+    .btn-install-secondary {
+      background: rgba(255,255,255,0.06);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .btn-install-secondary:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+    }
 
     /* ── HERO ── */
     .hero {
@@ -565,7 +580,7 @@
       display: grid; gap: 10px;
     }
     .auth-social-row {
-      display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px;
+      display: grid; grid-template-columns: minmax(0,1fr); gap: 10px;
     }
     .social-divider {
       display: flex; align-items: center; gap: 10px;
@@ -576,21 +591,48 @@
       content: ""; flex: 1; height: 1px; background: rgba(255,255,255,0.08);
     }
     .social-auth-btn {
-      width: 100%; min-height: 46px; padding: 12px 14px;
-      border-radius: 14px; border: 1px solid rgba(255,255,255,0.1);
-      background: rgba(255,255,255,0.04); color: #fff; cursor: pointer;
-      display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-      font-family: var(--display); font-size: .78rem; font-weight: 700;
-      transition: transform .2s, border-color .2s, background .2s, opacity .2s;
+      width: 100%; min-height: 64px; padding: 14px 18px;
+      border-radius: 18px; border: 1px solid rgba(255,255,255,0.1);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)),
+        rgba(255,255,255,0.04);
+      color: #fff; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: flex-start; gap: 14px;
+      text-align: left;
+      font-family: var(--display); font-size: .92rem; font-weight: 700;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+      transition: transform .2s, border-color .2s, background .2s, opacity .2s, box-shadow .2s;
     }
     .social-auth-btn:hover:not(:disabled) {
-      transform: translateY(-1px); border-color: rgba(59,130,246,0.28); background: rgba(59,130,246,0.08);
+      transform: translateY(-1px);
+      border-color: rgba(59,130,246,0.28);
+      background:
+        linear-gradient(180deg, rgba(59,130,246,0.14), rgba(255,255,255,0.04)),
+        rgba(59,130,246,0.08);
+      box-shadow: 0 14px 32px rgba(5,12,24,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
     }
     .social-auth-btn:disabled {
       opacity: .45; cursor: not-allowed;
     }
     .social-auth-btn svg {
-      width: 18px; height: 18px; flex-shrink: 0;
+      width: 22px; height: 22px; flex-shrink: 0;
+    }
+    .social-auth-icon {
+      width: 42px; height: 42px; border-radius: 14px;
+      display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 10px 22px rgba(0,0,0,0.18);
+    }
+    .social-auth-copy {
+      display: grid; gap: 2px; min-width: 0;
+    }
+    .social-auth-title {
+      font-size: .95rem; line-height: 1.1; color: #fff;
+      letter-spacing: -.01em;
+    }
+    .social-auth-subtitle {
+      font-size: .72rem; color: var(--ink2); font-weight: 600;
+      letter-spacing: .01em;
     }
     .auth-note {
       font-size: .72rem; color: var(--ink3); line-height: 1.5;
@@ -870,6 +912,266 @@
     .status-banner.error .si { background: rgba(251,113,133,.1); }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* INSTALL SHEET */
+    .install-sheet-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 220;
+      background: rgba(3, 8, 18, 0.72);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease;
+    }
+    .install-sheet-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .install-sheet {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translate(-50%, 24px);
+      width: min(460px, calc(100% - 20px));
+      z-index: 230;
+      background:
+        radial-gradient(circle at top right, rgba(34,197,94,0.2), transparent 34%),
+        radial-gradient(circle at bottom left, rgba(34,211,238,0.14), transparent 32%),
+        linear-gradient(180deg, rgba(12,22,39,0.98), rgba(5,10,20,0.98));
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 28px;
+      box-shadow: 0 30px 90px rgba(0,0,0,0.48);
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .28s ease, transform .28s ease;
+    }
+    .install-sheet.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+    }
+    .install-sheet-top {
+      padding: 22px 22px 10px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .install-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.12);
+      border: 1px solid rgba(34,197,94,0.22);
+      color: #86efac;
+      font-size: .68rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      font-family: var(--display);
+      margin-bottom: 10px;
+    }
+    .install-chip::before {
+      content: "";
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 14px rgba(34,197,94,0.75);
+    }
+    .install-title {
+      font-family: var(--serif);
+      font-size: clamp(1.8rem, 5vw, 2.4rem);
+      line-height: 1;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+    .install-copy p {
+      color: var(--ink2);
+      font-size: .86rem;
+      line-height: 1.7;
+      max-width: 280px;
+    }
+    .install-close {
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background .2s ease, transform .2s ease;
+    }
+    .install-close:hover {
+      background: rgba(255,255,255,0.1);
+      transform: translateY(-1px);
+    }
+    .install-visual {
+      margin: 0 22px 18px;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background:
+        linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)),
+        rgba(2,6,14,0.78);
+      min-height: 212px;
+      position: relative;
+      overflow: hidden;
+      padding: 22px 18px;
+    }
+    .install-visual::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 30px 30px;
+      opacity: .65;
+    }
+    .install-phone {
+      position: absolute;
+      right: 20px;
+      bottom: 0;
+      width: 154px;
+      height: 190px;
+      border-radius: 28px 28px 0 0;
+      padding: 13px 11px 0;
+      background: linear-gradient(180deg, rgba(12,21,36,0.96), rgba(7,12,24,0.98));
+      border: 1px solid rgba(255,255,255,0.08);
+      box-shadow: 0 26px 60px rgba(0,0,0,0.3);
+    }
+    .install-phone::before {
+      content: "";
+      position: absolute;
+      top: 9px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 4px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.16);
+    }
+    .install-screen {
+      height: 100%;
+      border-radius: 20px 20px 0 0;
+      background:
+        radial-gradient(circle at top, rgba(34,197,94,0.18), transparent 30%),
+        linear-gradient(180deg, #0f172a, #08111f);
+      border: 1px solid rgba(255,255,255,0.06);
+      display: grid;
+      align-content: start;
+      gap: 10px;
+      padding: 20px 12px 12px;
+    }
+    .install-app-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: rgba(255,255,255,0.72);
+      font-size: .58rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-family: var(--display);
+    }
+    .install-app-card {
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      display: grid;
+      gap: 8px;
+    }
+    .install-app-card strong {
+      display: block;
+      color: #fff;
+      font-size: .8rem;
+      font-family: var(--display);
+    }
+    .install-app-card span {
+      display: block;
+      color: var(--ink3);
+      font-size: .64rem;
+      line-height: 1.5;
+    }
+    .install-app-pill {
+      width: fit-content;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      font-size: .6rem;
+      font-weight: 700;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      font-family: var(--display);
+    }
+    .install-steps {
+      position: relative;
+      z-index: 1;
+      width: min(100%, 220px);
+      display: grid;
+      gap: 10px;
+    }
+    .install-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .install-step-no {
+      width: 28px;
+      height: 28px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #22c55e, #0ea5b7);
+      color: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--display);
+      font-size: .8rem;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .install-step strong {
+      display: block;
+      color: #fff;
+      font-size: .79rem;
+      margin-bottom: 3px;
+      font-family: var(--display);
+    }
+    .install-step span {
+      display: block;
+      color: var(--ink3);
+      font-size: .73rem;
+      line-height: 1.5;
+    }
+    .install-actions {
+      padding: 0 22px 22px;
+      display: grid;
+      gap: 12px;
+    }
+    .install-actions .btn {
+      width: 100%;
+      min-height: 52px;
+      font-size: .88rem;
+      border-radius: 18px;
+    }
+    .install-footnote {
+      color: var(--ink3);
+      font-size: .74rem;
+      line-height: 1.55;
+      text-align: center;
+    }
+
     /* ── HOW IT WORKS ── */
     .how-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1.1fr); gap: 20px; margin-top: 20px; }
     .steps { display: grid; gap: 11px; }
@@ -974,6 +1276,15 @@
       .console-visual { min-height: 176px; }
       .brand-wordmark { font-size: 2.7rem; }
       .brand-subcopy { font-size: .66rem; letter-spacing: .16em; }
+      .install-sheet {
+        width: calc(100% - 16px);
+        bottom: 8px;
+      }
+      .install-phone {
+        width: 132px;
+        height: 172px;
+        right: 14px;
+      }
     }
     @media(max-width:640px){
       .page { width: calc(100% - 24px); }
@@ -1011,6 +1322,28 @@
       .console-visual { min-height: 150px; }
       .brand-wordmark { font-size: 1.8rem; }
       .brand-subcopy { font-size: .56rem; letter-spacing: .12em; }
+      .install-sheet-top {
+        padding: 18px 18px 8px;
+      }
+      .install-visual {
+        margin: 0 18px 16px;
+        min-height: 340px;
+        padding: 18px 16px 150px;
+      }
+      .install-copy p,
+      .install-steps {
+        max-width: none;
+        width: 100%;
+      }
+      .install-phone {
+        right: 50%;
+        transform: translateX(50%);
+        width: 170px;
+        height: 176px;
+      }
+      .install-actions {
+        padding: 0 18px 18px;
+      }
     }
 
     /* ── STAGGERED ENTER ANIMATIONS ── */
@@ -1066,6 +1399,65 @@
       </a>
     </div>
   </nav>
+
+  <div id="installSheetBackdrop" class="install-sheet-backdrop hidden" aria-hidden="true"></div>
+  <aside id="installSheet" class="install-sheet hidden" aria-hidden="true" aria-label="Install HealthBuddy on Android">
+    <div class="install-sheet-top">
+      <div class="install-copy">
+        <div class="install-chip">Android install</div>
+        <h3 class="install-title">Put HealthBuddy on your phone</h3>
+        <p id="installSheetMessage">Install the app to get a cleaner full-screen experience on your Android device.</p>
+      </div>
+      <button id="installSheetClose" class="install-close" type="button" aria-label="Close install panel">x</button>
+    </div>
+    <div class="install-visual">
+      <div class="install-steps">
+        <div class="install-step">
+          <div class="install-step-no">1</div>
+          <div>
+            <strong>Open the browser menu</strong>
+            <span>Tap the three dots in Chrome or the share menu in your mobile browser.</span>
+          </div>
+        </div>
+        <div class="install-step">
+          <div class="install-step-no">2</div>
+          <div>
+            <strong>Choose install</strong>
+            <span id="installStepCopy">Select Add to Home screen or Install app when you see it.</span>
+          </div>
+        </div>
+        <div class="install-step">
+          <div class="install-step-no">3</div>
+          <div>
+            <strong>Launch like a real app</strong>
+            <span>HealthBuddy opens from your home screen with a smoother Android-style experience.</span>
+          </div>
+        </div>
+      </div>
+      <div class="install-phone" aria-hidden="true">
+        <div class="install-screen">
+          <div class="install-app-bar">
+            <span>HealthBuddy</span>
+            <span>Android</span>
+          </div>
+          <div class="install-app-card">
+            <strong>AI Medical Assistant</strong>
+            <span>Fast symptom analysis, care guidance, and a home-screen app layout.</span>
+            <div class="install-app-pill">Ready to install</div>
+          </div>
+          <div class="install-app-card">
+            <strong>Full-screen mode</strong>
+            <span>No browser clutter. Just the app.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="install-actions">
+      <button id="installSheetPrimary" class="btn btn-android" type="button">Install on Android</button>
+      <button id="installSheetSecondary" class="btn btn-install-secondary" type="button">Maybe later</button>
+      <p class="install-footnote" id="installSheetFootnote">If your browser does not show the install option, refresh the page once and try again.</p>
+    </div>
+  </aside>
 
   <!-- HERO -->
   <div id="hero" class="hero">
@@ -1256,19 +1648,18 @@
               <div class="social-divider">Quick Access</div>
               <div class="auth-social-row">
                 <button type="button" class="social-auth-btn" data-social-provider="google" disabled>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.6 14.7 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c6.9 0 8.6-6.5 8.1-9.8H12Z"/>
-                    <path fill="#34A853" d="M2.7 12c0 1.6.4 3.2 1.3 4.5l3.2-2.5c-.4-.6-.6-1.3-.6-2s.2-1.4.6-2L4 7.5C3.1 8.8 2.7 10.4 2.7 12Z"/>
-                    <path fill="#FBBC05" d="M12 21.3c2.7 0 5-.9 6.7-2.5l-3.1-2.4c-.8.6-1.9 1-3.6 1-2.6 0-4.8-1.7-5.6-4.1l-3.3 2.6C4.7 19.2 8.1 21.3 12 21.3Z"/>
-                    <path fill="#4285F4" d="M18.7 18.8c1.9-1.8 3.1-4.4 3.1-7.8 0-.7-.1-1.3-.2-1.9H12v3.9h5.5c-.3 1.2-1 2.2-1.9 3l3.1 2.4Z"/>
-                  </svg>
-                  Continue with Google
-                </button>
-                <button type="button" class="social-auth-btn" data-social-provider="facebook" disabled>
-                  <svg viewBox="0 0 24 24" aria-hidden="true">
-                    <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7v-3.5h3.1V9.3c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-1.9.9-1.9 1.9v2.3h3.3l-.5 3.5h-2.8v8.4A12 12 0 0 0 24 12Z"/>
-                  </svg>
-                  Continue with Facebook
+                  <span class="social-auth-icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.9-5.5 3.9-3.3 0-6-2.7-6-6s2.7-6 6-6c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.6 14.7 2.7 12 2.7 6.9 2.7 2.7 6.9 2.7 12S6.9 21.3 12 21.3c6.9 0 8.6-6.5 8.1-9.8H12Z"/>
+                      <path fill="#34A853" d="M2.7 12c0 1.6.4 3.2 1.3 4.5l3.2-2.5c-.4-.6-.6-1.3-.6-2s.2-1.4.6-2L4 7.5C3.1 8.8 2.7 10.4 2.7 12Z"/>
+                      <path fill="#FBBC05" d="M12 21.3c2.7 0 5-.9 6.7-2.5l-3.1-2.4c-.8.6-1.9 1-3.6 1-2.6 0-4.8-1.7-5.6-4.1l-3.3 2.6C4.7 19.2 8.1 21.3 12 21.3Z"/>
+                      <path fill="#4285F4" d="M18.7 18.8c1.9-1.8 3.1-4.4 3.1-7.8 0-.7-.1-1.3-.2-1.9H12v3.9h5.5c-.3 1.2-1 2.2-1.9 3l3.1 2.4Z"/>
+                    </svg>
+                  </span>
+                  <span class="social-auth-copy">
+                    <span class="social-auth-title">Continue with Google</span>
+                    <span class="social-auth-subtitle">Secure one-tap sign in</span>
+                  </span>
                 </button>
               </div>
             </div>
@@ -1584,10 +1975,21 @@
   const metaSections=document.getElementById('metaSections');
   const metaStatus=document.getElementById('metaStatus');
   const launchBtn=document.getElementById('launchDesktopBtn');
+  const installSheet=document.getElementById('installSheet');
+  const installSheetBackdrop=document.getElementById('installSheetBackdrop');
+  const installSheetClose=document.getElementById('installSheetClose');
+  const installSheetPrimary=document.getElementById('installSheetPrimary');
+  const installSheetSecondary=document.getElementById('installSheetSecondary');
+  const installSheetMessage=document.getElementById('installSheetMessage');
+  const installStepCopy=document.getElementById('installStepCopy');
+  const installSheetFootnote=document.getElementById('installSheetFootnote');
+  const launchButtonHiddenKey='healthbuddy-launch-hidden';
   let deferredPrompt=null;
   let currentPatient=null;
-  let authProviders={google:false,facebook:false};
+  let authProviders={google:false};
   const isMobileDevice=()=>/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+  const isAndroidDevice=()=>/Android/i.test(navigator.userAgent||'');
+  const isStandaloneDisplay=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
 
   // Keys must match AgentState fields from agents.py:
   // symptom_analysis | medication_advice | home_remedies | diet_lifestyle | doctor_recommendations
@@ -1643,6 +2045,98 @@
     statusBanner.className='status-banner'+(type!=='default'?' '+type:'');
   }
 
+  function setLaunchButtonLabel(label){
+    const textNode=[...launchBtn.childNodes].find(node=>node.nodeType===Node.TEXT_NODE&&node.textContent.trim()!=='');
+    if(textNode)textNode.textContent=` ${label}`;
+  }
+
+  function toggleInstallSheet(open){
+    if(!installSheet||!installSheetBackdrop)return;
+    installSheet.classList.toggle('hidden',!open);
+    installSheetBackdrop.classList.toggle('hidden',!open);
+    requestAnimationFrame(()=>{
+      installSheet.classList.toggle('open',open);
+      installSheetBackdrop.classList.toggle('open',open);
+    });
+    installSheet.setAttribute('aria-hidden',String(!open));
+    installSheetBackdrop.setAttribute('aria-hidden',String(!open));
+  }
+
+  function shouldHideLaunchButton(){
+    try{
+      return localStorage.getItem(launchButtonHiddenKey)==='1';
+    }catch(_e){
+      return false;
+    }
+  }
+
+  function hideLaunchButton(persist=false){
+    if(persist){
+      try{localStorage.setItem(launchButtonHiddenKey,'1');}catch(_e){}
+    }
+    launchBtn.classList.add('hidden');
+    launchBtn.setAttribute('aria-hidden','true');
+    launchBtn.setAttribute('tabindex','-1');
+    toggleInstallSheet(false);
+  }
+
+  function syncLaunchButton(){
+    if(shouldHideLaunchButton()||isStandaloneDisplay()){
+      hideLaunchButton(isStandaloneDisplay());
+      return;
+    }
+    if(isStandaloneDisplay()){
+      launchBtn.classList.remove('btn-android');
+      setLaunchButtonLabel('Open App');
+      return;
+    }
+    if(isAndroidDevice()){
+      launchBtn.classList.add('btn-android');
+      setLaunchButtonLabel(deferredPrompt?'Install on Android':'Mobile Install');
+      return;
+    }
+    launchBtn.classList.remove('btn-android');
+    if(isMobileDevice()){
+      setLaunchButtonLabel('Install on Mobile');
+      return;
+    }
+    setLaunchButtonLabel('Launch App');
+  }
+
+  function openMobileInstallExperience(){
+    if(deferredPrompt){
+      installSheetMessage.textContent='HealthBuddy is ready to install. Tap the button below to open the Android install prompt.';
+      installStepCopy.textContent='Approve the Android install prompt and HealthBuddy will be added to your home screen.';
+      installSheetPrimary.textContent='Install on Android';
+      installSheetFootnote.textContent='After installation, open HealthBuddy from your home screen for the cleanest mobile experience.';
+    }else{
+      installSheetMessage.textContent='Your browser has not exposed the install prompt yet, so we will guide you through the manual Android flow.';
+      installStepCopy.textContent='Choose Add to Home screen or Install app from the browser menu if it appears.';
+      installSheetPrimary.textContent='I will install from the browser menu';
+      installSheetFootnote.textContent='Chrome usually shows the option in the three-dot menu after the site has loaded fully.';
+    }
+    toggleInstallSheet(true);
+  }
+
+  async function triggerInstallPrompt(){
+    if(deferredPrompt){
+      deferredPrompt.prompt();
+      const {outcome}=await deferredPrompt.userChoice;
+      deferredPrompt=null;
+      syncLaunchButton();
+      if(outcome==='accepted'){
+        toggleInstallSheet(false);
+        setStatus('Installation started. Add HealthBuddy from the Android prompt.');
+        return true;
+      }
+      setStatus('Install prompt dismissed. You can try again any time.');
+      return false;
+    }
+    toggleInstallSheet(false);
+    setStatus('Open your browser menu and choose Add to Home screen or Install app.');
+    return false;
+  }
+
   function setAuthMessage(message,type='default'){
     const icons={default:'🔐',success:'✓',error:'✕'};
     authMessage.innerHTML=`<div class="si">${icons[type]||'🔐'}</div>${message}`;
@@ -1691,7 +2185,7 @@
   function toggleAuthButtons(isBusy){
     loginSubmit.disabled=isBusy;
     registerSubmit.disabled=isBusy;
-    socialAuthButtons.forEach(button=>button.disabled=isBusy||!authProviders[button.dataset.socialProvider]);
+    socialAuthButtons.forEach(button=>button.disabled=isBusy);
   }
 
   function updateAuthUi(patient){
@@ -1738,12 +2232,14 @@
   }
 
   function updateSocialAuthUi(providers){
-    authProviders={google:false,facebook:false,...providers};
+    authProviders={google:false,...providers};
     socialAuthButtons.forEach(button=>{
       const provider=button.dataset.socialProvider;
       const enabled=Boolean(authProviders[provider]);
-      button.disabled=!enabled;
-      button.title=enabled?`Continue with ${provider[0].toUpperCase()+provider.slice(1)}`:`${provider[0].toUpperCase()+provider.slice(1)} login is not configured yet.`;
+      button.disabled=false;
+      button.title=enabled
+        ? `Continue with ${provider[0].toUpperCase()+provider.slice(1)}`
+        : `Continue with ${provider[0].toUpperCase()+provider.slice(1)}. Configuration still needs to be completed on the server.`;
     });
   }
 
@@ -1833,16 +2329,48 @@
   socialAuthButtons.forEach(button=>{
     button.addEventListener('click',()=>{
       const provider=button.dataset.socialProvider;
-      if(!authProviders[provider]){
-        setAuthMessage(`${provider[0].toUpperCase()+provider.slice(1)} login is not configured yet.`,'error');
-        return;
-      }
       window.location.href=`${API_PREFIX}/api/auth/social/${provider}/start`;
     });
   });
 
-  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;});
-  window.addEventListener('appinstalled',()=>{setStatus('HealthBuddy installed successfully.');deferredPrompt=null;});
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;syncLaunchButton();});
+  window.addEventListener('appinstalled',()=>{setStatus('HealthBuddy installed successfully.');deferredPrompt=null;hideLaunchButton(true);});
+
+  installSheetClose.addEventListener('click',()=>toggleInstallSheet(false));
+  installSheetSecondary.addEventListener('click',()=>toggleInstallSheet(false));
+  installSheetBackdrop.addEventListener('click',()=>toggleInstallSheet(false));
+  installSheetPrimary.addEventListener('click',async()=>{await triggerInstallPrompt();});
+
+  launchBtn.addEventListener('click',async e=>{
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if(isMobileDevice()){
+      openMobileInstallExperience();
+      return;
+    }
+    if(deferredPrompt){
+      const installed=await triggerInstallPrompt();
+      if(installed)return;
+    }
+    setLaunchButtonLabel('Creating...');
+    launchBtn.style.pointerEvents='none';
+    try{
+      const a=document.createElement('a');
+      a.href=`${API_PREFIX}/download/healthbuddy-installer.bat`;
+      a.download='healthbuddy-installer.bat';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setStatus('Installer downloaded. Double-click the .bat file to install.');
+      hideLaunchButton(true);
+      window.location.hash='care-console';
+    }catch(e2){
+      setStatus(e2.message||'Unable to download installer.','error');
+    }finally{
+      launchBtn.style.pointerEvents='';
+      syncLaunchButton();
+    }
+  },true);
 
   launchBtn.addEventListener('click',async e=>{
     e.preventDefault();
@@ -1959,6 +2487,7 @@
     }finally{analyzeBtn.disabled=false;}
   });
 
+  syncLaunchButton();
   checkBackend();
   loadAuthConfig();
   loadCurrentPatient().finally(handleAuthRedirectMessage);

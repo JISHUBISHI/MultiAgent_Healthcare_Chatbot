@@ -61,7 +61,7 @@ Set these in Render:
 - `MONGODB_DB`
 - `FAST2SMS_API_KEY` only if SMS is required
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` if you want Google login
-- `FACEBOOK_APP_ID` and `FACEBOOK_APP_SECRET` if you want Facebook login
+- `PUBLIC_BASE_URL=https://your-service-name.onrender.com` so OAuth callbacks always use your public HTTPS URL
 - `MONGODB_APP_NAME=healthbuddy` optionally, if you want the Atlas client name to be explicit
 
 These are already declared in `render.yaml`:
@@ -76,8 +76,13 @@ Open your Render URL and test:
 - Home page loads
 - Register works
 - Login works
+- Google login returns to `/api/auth/social/google/callback`
 - Symptom analysis works
 - `/api/health` returns JSON
+
+For the provider dashboards, add these exact redirect URIs:
+
+- `https://your-service-name.onrender.com/api/auth/social/google/callback`
 
 ## 7. Free-tier behavior
 

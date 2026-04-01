@@ -150,7 +150,6 @@ def validate_password(password: str) -> str | None:
 def auth_provider_status() -> dict:
     return {
         "google": bool(os.environ.get("GOOGLE_CLIENT_ID") and os.environ.get("GOOGLE_CLIENT_SECRET")),
-        "facebook": bool(os.environ.get("FACEBOOK_APP_ID") and os.environ.get("FACEBOOK_APP_SECRET")),
     }
 
 

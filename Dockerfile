@@ -49,10 +49,8 @@ COPY --from=builder /install /usr/local
 # Copy only the files the app actually needs at runtime
 # (secrets / .env should be injected via Render's environment variables, NOT baked in)
 COPY agents.py \
-     app.py \
      config.py \
-     pdf_generator.py \
-     table_format.py \
+     healthbuddy/ \
      web_app.py \
      wsgi.py \
      index.html \

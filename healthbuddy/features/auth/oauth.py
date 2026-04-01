@@ -1,4 +1,4 @@
-"""OAuth helpers for Google and Facebook login."""
+"""OAuth helpers for Google login."""
 
 from __future__ import annotations
 
@@ -28,19 +28,6 @@ def _oauth_registry():
             client_secret=google_client_secret,
             server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
             client_kwargs={"scope": "openid email profile"},
-        )
-
-    facebook_app_id = os.environ.get("FACEBOOK_APP_ID")
-    facebook_app_secret = os.environ.get("FACEBOOK_APP_SECRET")
-    if facebook_app_id and facebook_app_secret:
-        oauth.register(
-            name="facebook",
-            client_id=facebook_app_id,
-            client_secret=facebook_app_secret,
-            api_base_url="https://graph.facebook.com/",
-            access_token_url="https://graph.facebook.com/oauth/access_token",
-            authorize_url="https://www.facebook.com/dialog/oauth",
-            client_kwargs={"scope": "email public_profile"},
         )
 
     return oauth

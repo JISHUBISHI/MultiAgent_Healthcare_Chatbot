@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import logging
+import os
 from urllib.parse import urlencode
+from urllib.parse import urlsplit
 
 from flask import Blueprint, jsonify, redirect, request, session, url_for
 from pymongo.errors import DuplicateKeyError, PyMongoError
@@ -25,15 +27,29 @@ logger = logging.getLogger(__name__)
 auth_bp = Blueprint("auth", __name__)
 
 
+def _public_url_for(endpoint: str, **values) -> str:
+    """Build an external URL that stays correct behind Render or another proxy."""
+    public_base_url = os.environ.get("PUBLIC_BASE_URL", "").strip().rstrip("/")
+    fallback_url = url_for(endpoint, _external=True, **values)
+    if not public_base_url:
+        return fallback_url
+
+    parsed = urlsplit(fallback_url)
+    path = parsed.path or "/"
+    if values.get("_anchor"):
+        path = f"{path}#{values['_anchor']}"
+    return f"{public_base_url}{path}"
+
+
 def _social_redirect(status: str, provider: str, message: str):
     query = urlencode({"auth": status, "provider": provider, "message": message})
     default_anchor = "care-console" if status == "success" else "patient-access"
     target = session.pop("post_auth_redirect", None)
     if target:
-      base, _, anchor = target.partition("#")
-      base = base or url_for("frontend.index")
-      anchor = anchor or default_anchor
-      return redirect(f"{base}?{query}#{anchor}")
+        base, _, anchor = target.partition("#")
+        base = base or url_for("frontend.index")
+        anchor = anchor or default_anchor
+        return redirect(f"{base}?{query}#{anchor}")
     return redirect(f"{url_for('frontend.index')}?{query}#{default_anchor}")
 
 
@@ -187,27 +203,25 @@ def logout_patient():
     return jsonify({"ok": True, "message": "Logged out successfully."})
 
 
+@auth_bp.get("/api/auth/social/<provider>")
+@auth_bp.get("/api/auth/social/<provider>/")
 @auth_bp.post("/api/auth/social/<provider>")
 @auth_bp.post("/api/auth/social/<provider>/")
 def social_login(provider: str):
-    """Placeholder endpoint for social providers until OAuth credentials are configured."""
+    """Backward-compatible social login entrypoint that starts the OAuth flow."""
     provider = provider.lower()
-    providers = auth_provider_status()
-    if provider not in {"google", "facebook"}:
+    if provider not in {"google"}:
+        if request.method == "GET":
+            return _social_redirect("error", provider, f"Unsupported social provider: {provider}")
         return jsonify({"ok": False, "error": f"Unsupported social provider: {provider}"}), 404
-    if not providers[provider]:
-        return jsonify(
-            {
-                "ok": False,
-                "error": f"{provider.title()} login is not configured yet. Add the provider client ID and secret first.",
-            }
-        ), 501
-    return jsonify(
-        {
-            "ok": False,
-            "error": f"{provider.title()} OAuth configuration exists, but the redirect flow has not been wired in yet.",
-        }
-    ), 501
+
+    next_target = request.args.get("next")
+    if request.method == "POST":
+        payload = request.get_json(silent=True) or {}
+        next_target = payload.get("next") or next_target
+    if next_target:
+        session["post_auth_redirect"] = next_target
+    return redirect(url_for("auth.social_login_start", provider=provider))
 
 
 @auth_bp.get("/api/auth/me")
@@ -237,7 +251,7 @@ def social_login_start(provider: str):
     """Start the OAuth flow for a supported social provider."""
     provider = provider.lower()
     providers = auth_provider_status()
-    if provider not in {"google", "facebook"}:
+    if provider not in {"google"}:
         return _social_redirect("error", provider, f"Unsupported social provider: {provider}")
     if not providers.get(provider):
         return _social_redirect("error", provider, f"{provider.title()} login is not configured yet.")
@@ -246,8 +260,8 @@ def social_login_start(provider: str):
     if client is None:
         return _social_redirect("error", provider, f"{provider.title()} OAuth client is unavailable.")
 
-    session["post_auth_redirect"] = request.args.get("next") or f"{url_for('frontend.index')}#care-console"
-    redirect_uri = url_for("auth.social_login_callback", provider=provider, _external=True)
+    session["post_auth_redirect"] = request.args.get("next") or session.get("post_auth_redirect") or f"{url_for('frontend.index')}#care-console"
+    redirect_uri = os.environ.get(f"{provider.upper()}_REDIRECT_URI") or _public_url_for("auth.social_login_callback", provider=provider)
     return client.authorize_redirect(redirect_uri)
 
 
@@ -262,16 +276,10 @@ def social_login_callback(provider: str):
             return _social_redirect("error", provider, f"{provider.title()} OAuth client is unavailable.")
 
         token = client.authorize_access_token()
-        if provider == "google":
-            userinfo = token.get("userinfo") or client.get("userinfo").json()
-            email = clean_email(userinfo.get("email", ""))
-            name = clean_patient_name(userinfo.get("name", "") or userinfo.get("given_name", ""))
-            provider_user_id = str(userinfo.get("sub", ""))
-        else:
-            userinfo = client.get("me?fields=id,name,email").json()
-            email = clean_email(userinfo.get("email", ""))
-            name = clean_patient_name(userinfo.get("name", ""))
-            provider_user_id = str(userinfo.get("id", ""))
+        userinfo = token.get("userinfo") or client.get("userinfo").json()
+        email = clean_email(userinfo.get("email", ""))
+        name = clean_patient_name(userinfo.get("name", "") or userinfo.get("given_name", ""))
+        provider_user_id = str(userinfo.get("sub", ""))
 
         if not provider_user_id:
             return _social_redirect("error", provider, f"{provider.title()} did not return a valid user id.")
