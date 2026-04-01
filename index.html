@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>HealthBuddy — AI Medical Assistant</title>
   <meta name="theme-color" content="#050d1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="HealthBuddy">
   <link rel="icon" href="/favicon.ico" sizes="any">
   <link rel="apple-touch-icon" href="/icon-192.png">
   <link rel="manifest" href="/manifest.webmanifest">
@@ -1983,12 +1986,14 @@
   const installSheetMessage=document.getElementById('installSheetMessage');
   const installStepCopy=document.getElementById('installStepCopy');
   const installSheetFootnote=document.getElementById('installSheetFootnote');
-  const launchButtonHiddenKey='healthbuddy-launch-hidden';
+  const launchButtonHiddenKey='healthbuddy-install-hidden';
   let deferredPrompt=null;
   let currentPatient=null;
   let authProviders={google:false};
   const isMobileDevice=()=>/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
   const isAndroidDevice=()=>/Android/i.test(navigator.userAgent||'');
+  const isIosDevice=()=>/iPhone|iPad|iPod/i.test(navigator.userAgent||'');
+  const isSafariBrowser=()=>/^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(navigator.userAgent||'');
   const isStandaloneDisplay=()=>window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;
 
   // Keys must match AgentState fields from agents.py:
@@ -2080,31 +2085,50 @@
     toggleInstallSheet(false);
   }
 
+  function showLaunchButton(){
+    launchBtn.classList.remove('hidden');
+    launchBtn.setAttribute('aria-hidden','false');
+    launchBtn.removeAttribute('tabindex');
+  }
+
+  function markAppInstalled(){
+    deferredPrompt=null;
+    hideLaunchButton(true);
+    setStatus('HealthBuddy installed successfully.');
+  }
+
   function syncLaunchButton(){
     if(shouldHideLaunchButton()||isStandaloneDisplay()){
       hideLaunchButton(isStandaloneDisplay());
       return;
     }
-    if(isStandaloneDisplay()){
-      launchBtn.classList.remove('btn-android');
-      setLaunchButtonLabel('Open App');
-      return;
-    }
+    showLaunchButton();
     if(isAndroidDevice()){
       launchBtn.classList.add('btn-android');
-      setLaunchButtonLabel(deferredPrompt?'Install on Android':'Mobile Install');
+      setLaunchButtonLabel('Install App');
       return;
     }
     launchBtn.classList.remove('btn-android');
-    if(isMobileDevice()){
-      setLaunchButtonLabel('Install on Mobile');
+    if(isIosDevice()){
+      setLaunchButtonLabel('Install App');
       return;
     }
-    setLaunchButtonLabel('Launch App');
+    if(isMobileDevice()){
+      setLaunchButtonLabel('Install App');
+      return;
+    }
+    setLaunchButtonLabel(deferredPrompt?'Install App':'Download App');
   }
 
   function openMobileInstallExperience(){
-    if(deferredPrompt){
+    if(isIosDevice()){
+      installSheetMessage.textContent='Install HealthBuddy on your iPhone or iPad from Safari for a full-screen app experience.';
+      installStepCopy.textContent='Tap Share, then choose Add to Home Screen, and confirm Add.';
+      installSheetPrimary.textContent=isSafariBrowser()?'I will add it in Safari':'Open in Safari first';
+      installSheetFootnote.textContent=isSafariBrowser()
+        ? 'After you add it to your home screen, open HealthBuddy from the new icon and this button will stay hidden on this device.'
+        : 'On iOS, installation works from Safari. Open this site in Safari, then use Share > Add to Home Screen.';
+    }else if(deferredPrompt){
       installSheetMessage.textContent='HealthBuddy is ready to install. Tap the button below to open the Android install prompt.';
       installStepCopy.textContent='Approve the Android install prompt and HealthBuddy will be added to your home screen.';
       installSheetPrimary.textContent='Install on Android';
@@ -2119,6 +2143,15 @@
   }
 
   async function triggerInstallPrompt(){
+    if(isIosDevice()){
+      toggleInstallSheet(false);
+      if(isSafariBrowser()){
+        setStatus('In Safari, tap Share and choose Add to Home Screen to install HealthBuddy.');
+      }else{
+        setStatus('On iPhone or iPad, open this site in Safari and choose Share > Add to Home Screen.','error');
+      }
+      return false;
+    }
     if(deferredPrompt){
       deferredPrompt.prompt();
       const {outcome}=await deferredPrompt.userChoice;
@@ -2334,7 +2367,7 @@
   });
 
   window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;syncLaunchButton();});
-  window.addEventListener('appinstalled',()=>{setStatus('HealthBuddy installed successfully.');deferredPrompt=null;hideLaunchButton(true);});
+  window.addEventListener('appinstalled',()=>{markAppInstalled();});
 
   installSheetClose.addEventListener('click',()=>toggleInstallSheet(false));
   installSheetSecondary.addEventListener('click',()=>toggleInstallSheet(false));
@@ -2362,7 +2395,6 @@
       a.click();
       a.remove();
       setStatus('Installer downloaded. Double-click the .bat file to install.');
-      hideLaunchButton(true);
       window.location.hash='care-console';
     }catch(e2){
       setStatus(e2.message||'Unable to download installer.','error');
